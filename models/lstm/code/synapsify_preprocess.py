@@ -15,6 +15,7 @@ Output:
 """
 
 import os
+import numpy as np
 from Synapsify.loadCleanly import sheets as sh
 
 # tokenizer.perl is from Moses: https://github.com/moses-smt/mosesdecoder/tree/master/scripts/tokenizer
@@ -49,14 +50,14 @@ def build_dict(sentences):
     counts = wordcount.values()
     keys = wordcount.keys()
 
-    sorted_idx = numpy.argsort(counts)[::-1]
+    sorted_idx = np.argsort(counts)[::-1]
 
     worddict = dict()
 
     for idx, ss in enumerate(sorted_idx):
         worddict[keys[ss]] = idx+2  # leave 0 and 1 (UNK)
 
-    print numpy.sum(counts), ' total words ', len(keys), ' unique words'
+    print np.sum(counts), ' total words ', len(keys), ' unique words'
 
     return worddict
 
@@ -109,7 +110,7 @@ def get_rand_indices(len_set, num_indices, forbidden):
     if XX[-1]>len_set: print "Test/Train set indices are out of bounds!!"
     return XX
 
-def main(directory, filename, textcol, sentcol):
+def main(directory, filename, textcol, sentcol, train_size, test_size):
 
     # For Synapsify Core output, the comments are in the first column
     #   and the sentiment is in the 6th column
@@ -119,26 +120,20 @@ def main(directory, filename, textcol, sentcol):
     DICTIONARY = build_dict(sentences)
 
     # TRAINING SET TRAINING SET TRAINING SET TRAINING SET
-    train_xx = get_rand_indices(len_sentences, 1000,[])
+    train_xx = get_rand_indices(len_sentences, train_size,[])
     XX = get_sentiment_indices(train_rows[train_xx], sentcol)
     train_x_sets, train_x, train_y = munge_class_freqs(sentences,[XX['neg'],XX['pos']])
-    train_x_neg = train_x_sets[0]
-    train_x_pos = train_x_sets[1]
 
     # TESTING SET TESTING SET TESTING SET TESTING SET
-    test_xx = get_rand_indices(len_sentences, 1000,[])
+    test_xx = get_rand_indices(len_sentences, test_size,train_xx)
     XX = get_sentiment_indices(test_rows[test_xx], sentcol)
     test_x_sets, test_x, test_y = munge_class_freqs(sentences,[XX['neg'],XX['pos']])
-    test_x_neg = test_x_sets[0]
-    test_x_pos = test_x_sets[1]
 
     TT = {
-        'train_x_neg': train_x_neg,
-        'train_x_pos': train_x_pos,
+        'train_x_sets': train_x_sets,
         'train_x': train_x,
         'train_y': train_y,
-        'test_x_neg': test_x_neg,
-        'test_x_pos': test_x_pos,
+        'test_x_sets': test_x_sets,
         'test_x': test_x,
         'test_y': test_y
     }
