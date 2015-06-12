@@ -29,7 +29,7 @@ if  (eval {require Thread;1;}) {
   Thread->import();
 }
 
-my $mydir = "$RealBin/../share/nonbreaking_prefixes";
+my $mydir = "nonbreaking_prefixes";
 
 my %NONBREAKING_PREFIX = ();
 my @protected_patterns = ();
@@ -555,3 +555,4 @@ sub load_prefixes
         close(PREFIX);
     }
 }
+
