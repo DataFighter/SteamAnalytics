@@ -6,7 +6,7 @@ https://github.com/moses-smt/mosesdecoder/raw/master/scripts/tokenizer/tokenizer
 3) Then run this script.
 """
 
-dataset_path='/Tmp/bastienf/aclImdb/'
+dataset_path='/home/ying/Deep_Learning/IdeaNets/IdeaNets/models/lstm/code/aclImdb/'
 
 import numpy
 import cPickle as pkl
@@ -19,7 +19,7 @@ import os
 from subprocess import Popen, PIPE
 
 # tokenizer.perl is from Moses: https://github.com/moses-smt/mosesdecoder/tree/master/scripts/tokenizer
-tokenizer_cmd = ['./tokenizer.perl', '-l', 'en', '-q', '-']
+tokenizer_cmd = ['/home/ying/Deep_Learning/IdeaNets/IdeaNets/models/lstm/code/tokenizer.perl', '-l', 'en', '-q', '-']
 
 
 def tokenize(sentences):
@@ -27,10 +27,12 @@ def tokenize(sentences):
     print 'Tokenizing..',
     text = "\n".join(sentences)
     tokenizer = Popen(tokenizer_cmd, stdin=PIPE, stdout=PIPE)
+
     tok_text, _ = tokenizer.communicate(text)
     toks = tok_text.split('\n')[:-1]
     print 'Done'
 
+    ### print toks
     return toks
 
 
@@ -38,6 +40,8 @@ def build_dict(path):
     sentences = []
     currdir = os.getcwd()
     os.chdir('%s/pos/' % path)
+
+    ### Read raw data from the dataset.
     for ff in glob.glob("*.txt"):
         with open(ff, 'r') as f:
             sentences.append(f.readline().strip())
@@ -47,27 +51,28 @@ def build_dict(path):
             sentences.append(f.readline().strip())
     os.chdir(currdir)
 
+    ### "sentences" is a long list containing all sentences
     sentences = tokenize(sentences)
 
     print 'Building dictionary..',
     wordcount = dict()
     for ss in sentences:
         words = ss.strip().lower().split()
-        for w in words:
+        for w in words:	### Get the appearing frequency of each word.
             if w not in wordcount:
                 wordcount[w] = 1
             else:
                 wordcount[w] += 1
 
-    counts = wordcount.values()
-    keys = wordcount.keys()
+    counts = wordcount.values()	### "counts" is the value list.
+    keys = wordcount.keys()	### "keys" is the key list conataining all words.
 
-    sorted_idx = numpy.argsort(counts)[::-1]
+    sorted_idx = numpy.argsort(counts)[::-1]	### sort "counts" in the list and return the index list.
 
     worddict = dict()
 
-    for idx, ss in enumerate(sorted_idx):
-        worddict[keys[ss]] = idx+2  # leave 0 and 1 (UNK)
+    for idx, ss in enumerate(sorted_idx):	### The dictionary data format: key: word, value: order index (The order is descending according to the word apprearing frequency.)
+        worddict[keys[ss]] = idx+2  # leave 0 and 1 (UNK)	### The order index starts from 2.
 
     print numpy.sum(counts), ' total words ', len(keys), ' unique words'
 
@@ -85,17 +90,20 @@ def grab_data(path, dictionary):
     sentences = tokenize(sentences)
 
     seqs = [None] * len(sentences)
+
     for idx, ss in enumerate(sentences):
         words = ss.strip().lower().split()
-        seqs[idx] = [dictionary[w] if w in dictionary else 1 for w in words]
+        seqs[idx] = [dictionary[w] if w in dictionary else 1 for w in words]	
 
-    return seqs
+    return seqs		### returns the order index of each word.
 
 
 def main():
     # Get the dataset from http://ai.stanford.edu/~amaas/data/sentiment/
+
     path = dataset_path
     dictionary = build_dict(os.path.join(path, 'train'))
+
 
     train_x_pos = grab_data(path+'train/pos', dictionary)
     train_x_neg = grab_data(path+'train/neg', dictionary)

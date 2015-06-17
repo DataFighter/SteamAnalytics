@@ -23,23 +23,23 @@ def get_minibatches_idx(n, minibatch_size, shuffle=False):
     Used to shuffle the dataset at each iteration.
     """
 
-    idx_list = numpy.arange(n, dtype="int32")
+    idx_list = numpy.arange(n, dtype="int32")	### idx_list an array [0, ..., n-1]
 
     if shuffle:
-        random.shuffle(idx_list)
+        random.shuffle(idx_list)		### shuffle the list
 
     minibatches = []
     minibatch_start = 0
     for i in range(n // minibatch_size):
         minibatches.append(idx_list[minibatch_start:
-                                    minibatch_start + minibatch_size])
+                                    minibatch_start + minibatch_size])	### For each batch, we get the list of indices of dataset.
         minibatch_start += minibatch_size
 
     if (minibatch_start != n):
         # Make a minibatch out of what is left
-        minibatches.append(idx_list[minibatch_start:])
+        minibatches.append(idx_list[minibatch_start:])	### The last bacth contains smaller size of data.
 
-    return zip(range(len(minibatches)), minibatches)
+    return zip(range(len(minibatches)), minibatches)	### return range + bacth_list
 
 
 def get_dataset(name):
@@ -74,11 +74,11 @@ def dropout_layer(state_before, use_noise, trng):
     return proj
 
 
-def _p(pp, name):
+def _p(pp, name):	### Pair the parameters
     return '%s_%s' % (pp, name)
 
 
-def init_params(options):
+def init_params(options):	### Initialize the parameters, and store them in a dictionary.
     """
     Global (not LSTM) parameter. For the embeding and the classifier.
     """
@@ -86,8 +86,8 @@ def init_params(options):
     # embedding
     randn = numpy.random.rand(options['n_words'],
                               options['dim_proj'])
-    params['Wemb'] = (0.01 * randn).astype('float32')
-    params = get_layer(options['encoder'])[0](options,
+    params['Wemb'] = (0.01 * randn).astype('float32')	### Random matrix with dimension of n_words * dim_proj
+    params = get_layer(options['encoder'])[0](options,  
                                               params,
                                               prefix=options['encoder'])
     # classifier
@@ -136,12 +136,12 @@ def param_init_lstm(options, params, prefix='lstm'):
                            ortho_weight(options['dim_proj']),
                            ortho_weight(options['dim_proj']),
                            ortho_weight(options['dim_proj'])], axis=1)
-    params[_p(prefix, 'W')] = W
+    params[_p(prefix, 'W')] = W		### The full name of this parameters should be "lstm_W". "_p(a,b)" is defined previously.
     U = numpy.concatenate([ortho_weight(options['dim_proj']),
                            ortho_weight(options['dim_proj']),
                            ortho_weight(options['dim_proj']),
                            ortho_weight(options['dim_proj'])], axis=1)
-    params[_p(prefix, 'U')] = U
+    params[_p(prefix, 'U')] = U		### The full name of this parameters should be "lstm_U". "_p(a,b)" is defined previously.
     b = numpy.zeros((4 * options['dim_proj'],))
     params[_p(prefix, 'b')] = b.astype('float32')
 
@@ -149,49 +149,49 @@ def param_init_lstm(options, params, prefix='lstm'):
 
 
 def lstm_layer(tparams, state_below, options, prefix='lstm', mask=None):
-    nsteps = state_below.shape[0]
-    if state_below.ndim == 3:
-        n_samples = state_below.shape[1]
+    nsteps = state_below.shape[0]	### The row dimension of "emb", which is the n_timesteps...
+    if state_below.ndim == 3:		
+        n_samples = state_below.shape[1]	### n_samples is the second dimension of emb ...
     else:
-        n_samples = 1
+        n_samples = 1	### If emb only 2-D, sample number will be 1...
 
-    assert mask is not None
+    assert mask is not None	### For unitesting???
 
-    def _slice(_x, n, dim):
+    def _slice(_x, n, dim):	
         if _x.ndim == 3:
             return _x[:, :, n*dim:(n+1)*dim]
         return _x[:, n*dim:(n+1)*dim]
 
     def _step(m_, x_, h_, c_):
-        preact = tensor.dot(h_, tparams[_p(prefix, 'U')])
-        preact += x_
-        preact += tparams[_p(prefix, 'b')]
+        preact = tensor.dot(h_, tparams[_p(prefix, 'U')])	### preact = h(t-1) * lstm_U
+        preact += x_						### Now preact = h(t-1) * lstm_U + W * emb  
+        preact += tparams[_p(prefix, 'b')]			### Now preact = h(t-1) * lstm_U + W * emb + lstm_b, which is 
 
-        i = tensor.nnet.sigmoid(_slice(preact, 0, options['dim_proj']))
-        f = tensor.nnet.sigmoid(_slice(preact, 1, options['dim_proj']))
-        o = tensor.nnet.sigmoid(_slice(preact, 2, options['dim_proj']))
-        c = tensor.tanh(_slice(preact, 3, options['dim_proj']))
+        i = tensor.nnet.sigmoid(_slice(preact, 0, options['dim_proj']))	### Formula (1)
+        f = tensor.nnet.sigmoid(_slice(preact, 1, options['dim_proj'])) ### Formula (3)
+        o = tensor.nnet.sigmoid(_slice(preact, 2, options['dim_proj']))	### Formula (5) with V_o = 0
+        c = tensor.tanh(_slice(preact, 3, options['dim_proj']))		### Formula (2)
 
-        c = f * c_ + i * c
-        c = m_[:, None] * c + (1. - m_)[:, None] * c_
+        c = f * c_ + i * c					### Formula (5)
+        c = m_[:, None] * c + (1. - m_)[:, None] * c_		### ??? what does "mask" do here???
 
-        h = o * tensor.tanh(c)
-        h = m_[:, None] * h + (1. - m_)[:, None] * h_
+        h = o * tensor.tanh(c)					### Formula (6)
+        h = m_[:, None] * h + (1. - m_)[:, None] * h_		### ???
 
-        return h, c
+        return h, c						
 
     state_below = (tensor.dot(state_below, tparams[_p(prefix, 'W')]) +
-                   tparams[_p(prefix, 'b')])
+                   tparams[_p(prefix, 'b')])		### state_below = lstm_W * emb + b ...
 
-    dim_proj = options['dim_proj']
-    rval, updates = theano.scan(_step,
+    dim_proj = options['dim_proj']	### dim_proj = ...
+    rval, updates = theano.scan(_step,			### Scan the function "_step" with time steps: time_step.
                                 sequences=[mask, state_below],
-                                outputs_info=[tensor.alloc(0., n_samples,
+                                outputs_info=[tensor.alloc(0., n_samples,	### h_ which is h(t-1) in formula, and is initialized as a 0-matrix with dimension of n_samples * dim_proj
                                                            dim_proj),
-                                              tensor.alloc(0., n_samples,
+                                              tensor.alloc(0., n_samples,	### c_ is same with h_
                                                            dim_proj)],
                                 name=_p(prefix, '_layers'),
-                                n_steps=nsteps)
+                                n_steps=nsteps)					### Steps for the layer output
     return rval[0]
 
 
@@ -297,36 +297,36 @@ def rmsprop(lr, tparams, grads, x, mask, y, cost):
 
 
 def build_model(tparams, options):
-    trng = RandomStreams(1234)
+    trng = RandomStreams(1234)				### Generate the random seed.
 
     # Used for dropout.
-    use_noise = theano.shared(numpy.float32(0.))
+    use_noise = theano.shared(numpy.float32(0.))	### Define a scalar variable of float.
 
-    x = tensor.matrix('x', dtype='int64')
-    mask = tensor.matrix('mask', dtype='float32')
-    y = tensor.vector('y', dtype='int64')
+    x = tensor.matrix('x', dtype='int64')		### x is Theano variables representing a 2-D matrix of int type.
+    mask = tensor.matrix('mask', dtype='float32')       ### mask is Theano variables representing a 2-D matrix of float type
+    y = tensor.vector('y', dtype='int64')		### y is Theano variables representing a vector of int type
 
-    n_timesteps = x.shape[0]
-    n_samples = x.shape[1]
+    n_timesteps = x.shape[0]				### n_timesteps means the row dimension of x.
+    n_samples = x.shape[1]				### n_samples means the column dimension of x.
 
     emb = tparams['Wemb'][x.flatten()].reshape([n_timesteps,
                                                 n_samples,
-                                                options['dim_proj']])
+                                                options['dim_proj']])	### Still cannot understand the dimension of the emb, probably 3...
     proj = get_layer(options['encoder'])[1](tparams, emb, options,
-                                            prefix=options['encoder'],
+                                            prefix=options['encoder'],	### "proj" is the output of the hidden layer, and the dimension is n_samples * dim_proj(hidden layers dimension)
                                             mask=mask)
     if options['encoder'] == 'lstm':
         proj = (proj * mask[:, :, None]).sum(axis=0)
-        proj = proj / mask.sum(axis=0)[:, None]
+        proj = proj / mask.sum(axis=0)[:, None]		### ??? Normalization
     if options['use_dropout']:
-        proj = dropout_layer(proj, use_noise, trng)
+        proj = dropout_layer(proj, use_noise, trng)  	### ??? What is used for
 
-    pred = tensor.nnet.softmax(tensor.dot(proj, tparams['U'])+tparams['b'])
+    pred = tensor.nnet.softmax(tensor.dot(proj, tparams['U'])+tparams['b'])	### pred is the final output, whose dimension is with n_samples * y_dim
 
-    f_pred_prob = theano.function([x, mask], pred, name='f_pred_prob')
-    f_pred = theano.function([x, mask], pred.argmax(axis=1), name='f_pred')
+    f_pred_prob = theano.function([x, mask], pred, name='f_pred_prob')		### f_pred_prob is the function name 
+    f_pred = theano.function([x, mask], pred.argmax(axis=1), name='f_pred')	### f_pred is the function of real output
 
-    cost = -tensor.log(pred[tensor.arange(n_samples), y] + 1e-8).mean()
+    cost = -tensor.log(pred[tensor.arange(n_samples), y] + 1e-8).mean()		### ??? cost function definition ???
 
     return use_noise, x, mask, y, f_pred_prob, f_pred, cost
 
@@ -354,7 +354,7 @@ def pred_probs(f_pred_prob, prepare_data, data, iterator, verbose=False):
     return probs
 
 
-def pred_error(f_pred, prepare_data, data, iterator, verbose=False):
+def pred_error(f_pred, prepare_data, data, iterator, verbose=False):	### This segment of code prints out the prediction error 
     """
     Just compute the error
     f_pred: Theano fct computing the prediction
@@ -399,10 +399,10 @@ def train_lstm(
 ):
 
     # Model options
-    model_options = locals().copy()
-    print "model options", model_options
+    model_options = locals().copy()	### Copy all options to model options.
+    print "model options", model_options 
 
-    load_data, prepare_data = get_dataset(dataset)
+    load_data, prepare_data = get_dataset(dataset)	### Get the processed data.
 
     print 'Loading data'
     train, valid, test = load_data(n_words=n_words, valid_portion=0.05,
@@ -415,7 +415,7 @@ def train_lstm(
     print 'Building model'
     # This create the initial parameters as numpy ndarrays.
     # Dict name (string) -> numpy ndarray
-    params = init_params(model_options)
+    params = init_params(model_options)		### Initialize all parameters including 'lstm_W', 'lstm_U' and 'lstm_b' in the ordered dictionary 'params'.
 
     if reload_model:
         load_params('lstm_model.npz', params)
@@ -423,7 +423,7 @@ def train_lstm(
     # This create Theano Shared Variable from the parameters.
     # Dict name (string) -> Theano Tensor Shared Variable
     # params and tparams have different copy of the weights.
-    tparams = init_tparams(params)
+    tparams = init_tparams(params)		### Make the parameters be shared to speed up the running speed because of re-use the memory.
 
     # use_noise is for dropout
     (use_noise, x, mask,
@@ -436,13 +436,13 @@ def train_lstm(
         weight_decay *= decay_c
         cost += weight_decay
 
-    f_cost = theano.function([x, mask, y], cost, name='f_cost')
+    f_cost = theano.function([x, mask, y], cost, name='f_cost')		### Define cost function.
 
     grads = tensor.grad(cost, wrt=tparams.values())
-    f_grad = theano.function([x, mask, y], grads, name='f_grad')
+    f_grad = theano.function([x, mask, y], grads, name='f_grad')	### Define Gradient of cost function
 
     lr = tensor.scalar(name='lr')
-    f_grad_shared, f_update = optimizer(lr, tparams, grads,
+    f_grad_shared, f_update = optimizer(lr, tparams, grads,		### Define the Gradient descent method
                                         x, mask, y, cost)
 
     print 'Optimization'
@@ -468,13 +468,13 @@ def train_lstm(
     estop = False  # early stop
     start_time = time.clock()
     try:
-        for eidx in xrange(max_epochs):
+        for eidx in xrange(max_epochs):	### max_epochs = 5000 in default...
             n_samples = 0
 
             # Get new shuffled index for the training set.
             kf = get_minibatches_idx(len(train[0]), batch_size, shuffle=True)
 
-            for _, train_index in kf:
+            for _, train_index in kf: ### for each epoch, there are many batches
                 uidx += 1
                 use_noise.set_value(1.)
 
@@ -484,7 +484,7 @@ def train_lstm(
 
                 # Get the data in numpy.ndarray formet.
                 # It return something of the shape (minibatch maxlen, n samples)
-                x, mask, y = prepare_data(x, y, maxlen=maxlen)
+                x, mask, y = prepare_data(x, y, maxlen=maxlen)		### x is with dimension of maxlen * n_samples
                 if x is None:
                     print 'Minibatch with zero sample under length ', maxlen
                     continue
@@ -497,7 +497,7 @@ def train_lstm(
                     print 'NaN detected'
                     return 1., 1., 1.
 
-                if numpy.mod(uidx, dispFreq) == 0:
+                if numpy.mod(uidx, dispFreq) == 0:	### When it gets to the display frequency, it prints it out.
                     print 'Epoch ', eidx, 'Update ', uidx, 'Cost ', cost
 
                 if numpy.mod(uidx, saveFreq) == 0:
@@ -508,7 +508,7 @@ def train_lstm(
                     else:
                         params = unzip(tparams)
                     numpy.savez(saveto, history_errs=history_errs, **params)
-                    pkl.dump(model_options, open('%s.pkl' % saveto, 'wb'), -1)
+                    pkl.dump(model_options, open('%s.pkl' % saveto, 'wb'), -1) ### save the trianing result to "lstm_model.npz.pkl"...
                     print 'Done'
 
                 if numpy.mod(uidx, validFreq) == 0:
