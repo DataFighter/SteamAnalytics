@@ -2,20 +2,26 @@
 Build a tweet sentiment analyzer
 '''
 from collections import OrderedDict
-import copy
 import cPickle as pkl
-import random
 import sys
 import time
 
 import numpy
 import theano
+from theano import config
 import theano.tensor as tensor
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
 import imdb
 
 datasets = {'imdb': (imdb.load_data, imdb.prepare_data)}
+
+# Set the random number generators' seeds for consistency
+SEED = 123
+numpy.random.seed(SEED)
+
+def numpy_floatX(data):
+    return numpy.asarray(data, dtype=config.floatX)
 
 
 def get_minibatches_idx(n, minibatch_size, shuffle=False):
@@ -26,7 +32,7 @@ def get_minibatches_idx(n, minibatch_size, shuffle=False):
     idx_list = numpy.arange(n, dtype="int32")
 
     if shuffle:
-        random.shuffle(idx_list)
+        numpy.random.shuffle(idx_list)
 
     minibatches = []
     minibatch_start = 0
@@ -86,14 +92,14 @@ def init_params(options):
     # embedding
     randn = numpy.random.rand(options['n_words'],
                               options['dim_proj'])
-    params['Wemb'] = (0.01 * randn).astype('float32')
+    params['Wemb'] = (0.01 * randn).astype(config.floatX)
     params = get_layer(options['encoder'])[0](options,
                                               params,
                                               prefix=options['encoder'])
     # classifier
     params['U'] = 0.01 * numpy.random.randn(options['dim_proj'],
-                                            options['ydim']).astype('float32')
-    params['b'] = numpy.zeros((options['ydim'],)).astype('float32')
+                                            options['ydim']).astype(config.floatX)
+    params['b'] = numpy.zeros((options['ydim'],)).astype(config.floatX)
 
     return params
 
@@ -123,7 +129,7 @@ def get_layer(name):
 def ortho_weight(ndim):
     W = numpy.random.randn(ndim, ndim)
     u, s, v = numpy.linalg.svd(W)
-    return u.astype('float32')
+    return u.astype(config.floatX)
 
 
 def param_init_lstm(options, params, prefix='lstm'):
@@ -143,7 +149,7 @@ def param_init_lstm(options, params, prefix='lstm'):
                            ortho_weight(options['dim_proj'])], axis=1)
     params[_p(prefix, 'U')] = U
     b = numpy.zeros((4 * options['dim_proj'],))
-    params[_p(prefix, 'b')] = b.astype('float32')
+    params[_p(prefix, 'b')] = b.astype(config.floatX)
 
     return params
 
@@ -159,13 +165,12 @@ def lstm_layer(tparams, state_below, options, prefix='lstm', mask=None):
 
     def _slice(_x, n, dim):
         if _x.ndim == 3:
-            return _x[:, :, n*dim:(n+1)*dim]
-        return _x[:, n*dim:(n+1)*dim]
+            return _x[:, :, n * dim:(n + 1) * dim]
+        return _x[:, n * dim:(n + 1) * dim]
 
     def _step(m_, x_, h_, c_):
         preact = tensor.dot(h_, tparams[_p(prefix, 'U')])
         preact += x_
-        preact += tparams[_p(prefix, 'b')]
 
         i = tensor.nnet.sigmoid(_slice(preact, 0, options['dim_proj']))
         f = tensor.nnet.sigmoid(_slice(preact, 1, options['dim_proj']))
@@ -186,9 +191,11 @@ def lstm_layer(tparams, state_below, options, prefix='lstm', mask=None):
     dim_proj = options['dim_proj']
     rval, updates = theano.scan(_step,
                                 sequences=[mask, state_below],
-                                outputs_info=[tensor.alloc(0., n_samples,
+                                outputs_info=[tensor.alloc(numpy_floatX(0.),
+                                                           n_samples,
                                                            dim_proj),
-                                              tensor.alloc(0., n_samples,
+                                              tensor.alloc(numpy_floatX(0.),
+                                                           n_samples,
                                                            dim_proj)],
                                 name=_p(prefix, '_layers'),
                                 n_steps=nsteps)
@@ -229,13 +236,13 @@ def sgd(lr, tparams, grads, x, mask, y, cost):
 
 
 def adadelta(lr, tparams, grads, x, mask, y, cost):
-    zipped_grads = [theano.shared(p.get_value() * numpy.float32(0.),
+    zipped_grads = [theano.shared(p.get_value() * numpy_floatX(0.),
                                   name='%s_grad' % k)
                     for k, p in tparams.iteritems()]
-    running_up2 = [theano.shared(p.get_value() * numpy.float32(0.),
+    running_up2 = [theano.shared(p.get_value() * numpy_floatX(0.),
                                  name='%s_rup2' % k)
                    for k, p in tparams.iteritems()]
-    running_grads2 = [theano.shared(p.get_value() * numpy.float32(0.),
+    running_grads2 = [theano.shared(p.get_value() * numpy_floatX(0.),
                                     name='%s_rgrad2' % k)
                       for k, p in tparams.iteritems()]
 
@@ -243,7 +250,7 @@ def adadelta(lr, tparams, grads, x, mask, y, cost):
     rg2up = [(rg2, 0.95 * rg2 + 0.05 * (g ** 2))
              for rg2, g in zip(running_grads2, grads)]
 
-    f_grad_shared = theano.function([x, mask, y], cost, updates=zgup+rg2up,
+    f_grad_shared = theano.function([x, mask, y], cost, updates=zgup + rg2up,
                                     name='adadelta_f_grad_shared')
 
     updir = [-tensor.sqrt(ru2 + 1e-6) / tensor.sqrt(rg2 + 1e-6) * zg
@@ -254,7 +261,7 @@ def adadelta(lr, tparams, grads, x, mask, y, cost):
              for ru2, ud in zip(running_up2, updir)]
     param_up = [(p, p + ud) for p, ud in zip(tparams.values(), updir)]
 
-    f_update = theano.function([lr], [], updates=ru2up+param_up,
+    f_update = theano.function([lr], [], updates=ru2up + param_up,
                                on_unused_input='ignore',
                                name='adadelta_f_update')
 
@@ -262,13 +269,13 @@ def adadelta(lr, tparams, grads, x, mask, y, cost):
 
 
 def rmsprop(lr, tparams, grads, x, mask, y, cost):
-    zipped_grads = [theano.shared(p.get_value() * numpy.float32(0.),
+    zipped_grads = [theano.shared(p.get_value() * numpy_floatX(0.),
                                   name='%s_grad' % k)
                     for k, p in tparams.iteritems()]
-    running_grads = [theano.shared(p.get_value() * numpy.float32(0.),
+    running_grads = [theano.shared(p.get_value() * numpy_floatX(0.),
                                    name='%s_rgrad' % k)
                      for k, p in tparams.iteritems()]
-    running_grads2 = [theano.shared(p.get_value() * numpy.float32(0.),
+    running_grads2 = [theano.shared(p.get_value() * numpy_floatX(0.),
                                     name='%s_rgrad2' % k)
                       for k, p in tparams.iteritems()]
 
@@ -281,7 +288,7 @@ def rmsprop(lr, tparams, grads, x, mask, y, cost):
                                     updates=zgup + rgup + rg2up,
                                     name='rmsprop_f_grad_shared')
 
-    updir = [theano.shared(p.get_value() * numpy.float32(0.),
+    updir = [theano.shared(p.get_value() * numpy_floatX(0.),
                            name='%s_updir' % k)
              for k, p in tparams.iteritems()]
     updir_new = [(ud, 0.9 * ud - 1e-4 * zg / tensor.sqrt(rg2 - rg ** 2 + 1e-4))
@@ -289,7 +296,7 @@ def rmsprop(lr, tparams, grads, x, mask, y, cost):
                                             running_grads2)]
     param_up = [(p, p + udn[1])
                 for p, udn in zip(tparams.values(), updir_new)]
-    f_update = theano.function([lr], [], updates=updir_new+param_up,
+    f_update = theano.function([lr], [], updates=updir_new + param_up,
                                on_unused_input='ignore',
                                name='rmsprop_f_update')
 
@@ -297,13 +304,13 @@ def rmsprop(lr, tparams, grads, x, mask, y, cost):
 
 
 def build_model(tparams, options):
-    trng = RandomStreams(1234)
+    trng = RandomStreams(SEED)
 
     # Used for dropout.
-    use_noise = theano.shared(numpy.float32(0.))
+    use_noise = theano.shared(numpy_floatX(0.))
 
     x = tensor.matrix('x', dtype='int64')
-    mask = tensor.matrix('mask', dtype='float32')
+    mask = tensor.matrix('mask', dtype=config.floatX)
     y = tensor.vector('y', dtype='int64')
 
     n_timesteps = x.shape[0]
@@ -321,12 +328,16 @@ def build_model(tparams, options):
     if options['use_dropout']:
         proj = dropout_layer(proj, use_noise, trng)
 
-    pred = tensor.nnet.softmax(tensor.dot(proj, tparams['U'])+tparams['b'])
+    pred = tensor.nnet.softmax(tensor.dot(proj, tparams['U']) + tparams['b'])
 
     f_pred_prob = theano.function([x, mask], pred, name='f_pred_prob')
     f_pred = theano.function([x, mask], pred.argmax(axis=1), name='f_pred')
 
-    cost = -tensor.log(pred[tensor.arange(n_samples), y] + 1e-8).mean()
+    off = 1e-8
+    if pred.dtype == 'float16':
+        off = 1e-6
+
+    cost = -tensor.log(pred[tensor.arange(n_samples), y] + off).mean()
 
     return use_noise, x, mask, y, f_pred_prob, f_pred, cost
 
@@ -336,7 +347,7 @@ def pred_probs(f_pred_prob, prepare_data, data, iterator, verbose=False):
     the probabilities of new examples.
     """
     n_samples = len(data[0])
-    probs = numpy.zeros((n_samples, 2)).astype('float32')
+    probs = numpy.zeros((n_samples, 2)).astype(config.floatX)
 
     n_done = 0
 
@@ -368,7 +379,7 @@ def pred_error(f_pred, prepare_data, data, iterator, verbose=False):
         preds = f_pred(x, mask)
         targets = numpy.array(data[1])[valid_index]
         valid_err += (preds == targets).sum()
-    valid_err = 1. - numpy.float32(valid_err) / len(data[0])
+    valid_err = 1. - numpy_floatX(valid_err) / len(data[0])
 
     return valid_err
 
@@ -395,7 +406,8 @@ def train_lstm(
     noise_std=0.,
     use_dropout=True,  # if False slightly faster, but worst test error
                        # This frequently need a bigger model.
-    reload_model="",  # Path to a saved model we want to start from.
+    reload_model=None,  # Path to a saved model we want to start from.
+    test_size=-1,  # If >0, we keep only this number of test example.
 ):
 
     # Model options
@@ -407,8 +419,16 @@ def train_lstm(
     print 'Loading data'
     train, valid, test = load_data(n_words=n_words, valid_portion=0.05,
                                    maxlen=maxlen)
+    if test_size > 0:
+        # The test set is sorted by size, but we want to keep random
+        # size example.  So we must select a random selection of the
+        # examples.
+        idx = numpy.arange(len(test[0]))
+        numpy.random.shuffle(idx)
+        idx = idx[:test_size]
+        test = ([test[0][n] for n in idx], [test[1][n] for n in idx])
 
-    ydim = numpy.max(train[1])+1
+    ydim = numpy.max(train[1]) + 1
 
     model_options['ydim'] = ydim
 
@@ -430,9 +450,9 @@ def train_lstm(
      y, f_pred_prob, f_pred, cost) = build_model(tparams, model_options)
 
     if decay_c > 0.:
-        decay_c = theano.shared(numpy.float32(decay_c), name='decay_c')
+        decay_c = theano.shared(numpy_floatX(decay_c), name='decay_c')
         weight_decay = 0.
-        weight_decay += (tparams['U']**2).sum()
+        weight_decay += (tparams['U'] ** 2).sum()
         weight_decay *= decay_c
         cost += weight_decay
 
@@ -447,22 +467,21 @@ def train_lstm(
 
     print 'Optimization'
 
-    kf_valid = get_minibatches_idx(len(valid[0]), valid_batch_size,
-                                   shuffle=True)
-    kf_test = get_minibatches_idx(len(test[0]), valid_batch_size,
-                                  shuffle=True)
+    kf_valid = get_minibatches_idx(len(valid[0]), valid_batch_size)
+    kf_test = get_minibatches_idx(len(test[0]), valid_batch_size)
 
     print "%d train examples" % len(train[0])
     print "%d valid examples" % len(valid[0])
     print "%d test examples" % len(test[0])
+
     history_errs = []
     best_p = None
     bad_count = 0
 
     if validFreq == -1:
-        validFreq = len(train[0])/batch_size
+        validFreq = len(train[0]) / batch_size
     if saveFreq == -1:
-        saveFreq = len(train[0])/batch_size
+        saveFreq = len(train[0]) / batch_size
 
     uidx = 0  # the number of update done
     estop = False  # early stop
@@ -482,12 +501,10 @@ def train_lstm(
                 y = [train[1][t] for t in train_index]
                 x = [train[0][t]for t in train_index]
 
-                # Get the data in numpy.ndarray formet.
-                # It return something of the shape (minibatch maxlen, n samples)
-                x, mask, y = prepare_data(x, y, maxlen=maxlen)
-                if x is None:
-                    print 'Minibatch with zero sample under length ', maxlen
-                    continue
+                # Get the data in numpy.ndarray format
+                # This swap the axis!
+                # Return something of shape (minibatch maxlen, n samples)
+                x, mask, y = prepare_data(x, y)
                 n_samples += x.shape[1]
 
                 cost = f_grad_shared(x, mask, y)
@@ -500,7 +517,7 @@ def train_lstm(
                 if numpy.mod(uidx, dispFreq) == 0:
                     print 'Epoch ', eidx, 'Update ', uidx, 'Cost ', cost
 
-                if numpy.mod(uidx, saveFreq) == 0:
+                if saveto and numpy.mod(uidx, saveFreq) == 0:
                     print 'Saving...',
 
                     if best_p is not None:
@@ -514,7 +531,8 @@ def train_lstm(
                 if numpy.mod(uidx, validFreq) == 0:
                     use_noise.set_value(0.)
                     train_err = pred_error(f_pred, prepare_data, train, kf)
-                    valid_err = pred_error(f_pred, prepare_data, valid, kf_valid)
+                    valid_err = pred_error(f_pred, prepare_data, valid,
+                                           kf_valid)
                     test_err = pred_error(f_pred, prepare_data, test, kf_test)
 
                     history_errs.append([valid_err, test_err])
@@ -553,15 +571,16 @@ def train_lstm(
         best_p = unzip(tparams)
 
     use_noise.set_value(0.)
-    train_err = pred_error(f_pred, prepare_data, train, kf)
+    kf_train_sorted = get_minibatches_idx(len(train[0]), batch_size)
+    train_err = pred_error(f_pred, prepare_data, train, kf_train_sorted)
     valid_err = pred_error(f_pred, prepare_data, valid, kf_valid)
     test_err = pred_error(f_pred, prepare_data, test, kf_test)
 
     print 'Train ', train_err, 'Valid ', valid_err, 'Test ', test_err
-
-    numpy.savez(saveto, train_err=train_err,
-                valid_err=valid_err, test_err=test_err,
-                history_errs=history_errs, **best_p)
+    if saveto:
+        numpy.savez(saveto, train_err=train_err,
+                    valid_err=valid_err, test_err=test_err,
+                    history_errs=history_errs, **best_p)
     print 'The code run for %d epochs, with %f sec/epochs' % (
         (eidx + 1), (end_time - start_time) / (1. * (eidx + 1)))
     print >> sys.stderr, ('Training took %.1fs' %
@@ -570,14 +589,8 @@ def train_lstm(
 
 
 if __name__ == '__main__':
-
-    # We must have floatX=float32 for this tutorial to work correctly.
-    theano.config.floatX = "float32"
-    # The next line is the new Theano default. This is a speed up.
-    theano.scan.allow_gc = False
-
     # See function train for all possible parameter and there definition.
     train_lstm(
-        #reload_model="lstm_model.npz",
         max_epochs=100,
+        test_size=500,
     )
