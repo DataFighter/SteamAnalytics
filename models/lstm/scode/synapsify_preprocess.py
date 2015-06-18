@@ -122,7 +122,7 @@ def main(directory, filename, textcol, sentcol, train_size, test_size):
     # For Synapsify Core output, the comments are in the first column
     #   and the sentiment is in the 6th column
     header, rows = sh.get_spreadsheet_rows(os.path.join(directory, filename) ,textcol)
-    sentences = [S[textcol] for s, S in enumerate(rows)]
+    sentences = [str(S[textcol]) for s, S in enumerate(rows)]
     len_sentences = len(sentences)
     DICTIONARY = build_dict(sentences)
 
@@ -162,8 +162,8 @@ if __name__ == '__main__':
     if len(sys.argv)>3: sentcol = int(sys.argv[4])
 
     ### I added the following part of codes here
-    train_size = sys.argv[5]
-    test_size = sys.argv[6]
+    train_size = int(sys.argv[5])
+    test_size = int(sys.argv[6])
     ### The main function should take six parameters instead of four
     ### The original code is:
     ### main(directory, filename, textcol, sentcol)
