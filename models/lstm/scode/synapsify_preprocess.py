@@ -141,10 +141,17 @@ def main(directory, filename, textcol, sentcol, train_size, test_size):
     return TT
 
 if __name__ == '__main__':
-    directory = sys.argv[0]
-    filename  = sys.argv[1]
+    directory = sys.argv[1]
+    filename  = sys.argv[2]
     textcol = 0
-    if len(sys.argv)>2: textcol = sys.argv[2]
+    if len(sys.argv)>2: textcol = sys.argv[3]
     sentcol = 5
-    if len(sys.argv)>3: sentcol = sys.argv[3]
-    main(directory, filename, textcol, sentcol)
+    if len(sys.argv)>3: sentcol = sys.argv[4]
+
+    ### I added the following part of codes here
+    train_size = sys.argv[5]
+    test_size = sys.argv[6]
+    ### The main function should take six parameters instead of four
+    ### The original code is:
+    ### main(directory, filename, textcol, sentcol)
+    main(directory, filename, textcol, sentcol, train_size, test_size)
