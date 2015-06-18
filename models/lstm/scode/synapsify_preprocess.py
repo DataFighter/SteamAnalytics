@@ -91,11 +91,11 @@ def get_sentiment_indices(rows, sentcol):
 def munge_class_freqs(sentences,index_sets):
 
     # A variation on the original LSTM code,
-    freqs_x_sets = set()
+    freqs_x_sets = []
     freqs_x = []
     freqs_y = []
     for y,xx in enumerate(index_sets):
-        x_set = format_sentence_frequencies(sentences[xx])
+        x_set = format_sentence_frequencies([sentences[x] for x in xx])
         freqs_x_sets.append( x_set)
         freqs_x = freqs_x + x_set
         freqs_y = freqs_y + [y]*len(x_set)
@@ -112,7 +112,7 @@ def get_rand_indices(len_set, num_indices, forbidden):
     """
 
     # I just want to get this working and move on
-    initial = len(forbidden)
+    initial = len(forbidden)-1
     XX = range(initial,initial+num_indices)
     if XX[-1]>len_set: print "Test/Train set indices are out of bounds!!"
     return XX
@@ -128,19 +128,13 @@ def main(directory, filename, textcol, sentcol, train_size, test_size):
 
     # TRAINING SET TRAINING SET TRAINING SET TRAINING SET
     train_xx = get_rand_indices(len_sentences, train_size,[])
-    ##########
-    ##########
-    ########## 
-    ### Get all train rows.
-    ### train_rows not defined?
-    XX = get_sentiment_indices(train_rows[train_xx], sentcol)
+    XX = get_sentiment_indices([rows[r] for r in train_xx], sentcol)
     train_x_sets, train_x, train_y = munge_class_freqs(sentences,[XX['neg'],XX['pos']])
 
     # TESTING SET TESTING SET TESTING SET TESTING SET
     test_xx = get_rand_indices(len_sentences, test_size,train_xx)
-    XX = get_sentiment_indices(test_rows[test_xx], sentcol)
+    XX = get_sentiment_indices([rows[r] for r in test_xx], sentcol)
     test_x_sets, test_x, test_y = munge_class_freqs(sentences,[XX['neg'],XX['pos']])
-### XX = get_sentiment_indices(train_rows[train_xx], sentcol)	### NameError: global name 'train_rows' is not defined
 
     TT = {
         'train_x_sets': train_x_sets,
