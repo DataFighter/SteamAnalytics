@@ -6,10 +6,10 @@ https://github.com/moses-smt/mosesdecoder/raw/master/scripts/tokenizer/tokenizer
 3) Then run this script.
 """
 
-dataset_path='/home/ying/Deep_Learning/IdeaNets/IdeaNets/models/lstm/code/aclImdb/'
 
 import numpy
 import cPickle as pkl
+import os, sys, inspect
 
 from collections import OrderedDict
 
@@ -18,8 +18,13 @@ import os
 
 from subprocess import Popen, PIPE
 
+dataset_path = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile( inspect.currentframe() ))[0],"aclImdb/")))
+if dataset_path not in sys.path:
+    sys.path.insert(0, dataset_path)
+
 # tokenizer.perl is from Moses: https://github.com/moses-smt/mosesdecoder/tree/master/scripts/tokenizer
-tokenizer_cmd = ['/home/ying/Deep_Learning/IdeaNets/IdeaNets/models/lstm/code/tokenizer.perl', '-l', 'en', '-q', '-']
+tokenizer_perl = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile( inspect.currentframe() ))[0],"tokenizer.perl")))
+tokenizer_cmd = [tokenizer_perl, '-l', 'en', '-q', '-']
 
 
 def tokenize(sentences):
@@ -104,14 +109,13 @@ def main():
     path = dataset_path
     dictionary = build_dict(os.path.join(path, 'train'))
 
-
-    train_x_pos = grab_data(path+'train/pos', dictionary)
-    train_x_neg = grab_data(path+'train/neg', dictionary)
+    train_x_pos = grab_data(os.path.join(path, 'train/pos'), dictionary)
+    train_x_neg = grab_data(os.path.join(path, 'train/neg'), dictionary)
     train_x = train_x_pos + train_x_neg
     train_y = [1] * len(train_x_pos) + [0] * len(train_x_neg)
 
-    test_x_pos = grab_data(path+'test/pos', dictionary)
-    test_x_neg = grab_data(path+'test/neg', dictionary)
+    test_x_pos = grab_data(os.path.join(path, 'train/pos'), dictionary)
+    test_x_neg = grab_data(os.path.join(path, 'train/neg'), dictionary)
     test_x = test_x_pos + test_x_neg
     test_y = [1] * len(test_x_pos) + [0] * len(test_x_neg)
 
