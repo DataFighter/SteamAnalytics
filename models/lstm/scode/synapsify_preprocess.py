@@ -128,6 +128,19 @@ class synapsify_preprocess():
         if XX[-1]>len_set: print "Test/Train set indices are out of bounds!!"
         return XX
 
+    def max_sentence_length(self):
+        # from m
+        # train_set = self.train_xx ?????
+        maxlen = self._model_options['maxlen']
+        new_train_set_x = []
+        new_train_set_y = []
+        for x, y in zip(train_set[0], train_set[1]):
+            if len(x) < maxlen:
+                new_train_set_x.append(x)
+                new_train_set_y.append(y)
+        train_set = (new_train_set_x, new_train_set_y)
+        del new_train_set_x, new_train_set_y
+
     def main():
 
         # For Synapsify Core output, the comments are in the first column
@@ -138,14 +151,17 @@ class synapsify_preprocess():
         DICTIONARY = build_dict(sentences)
 
         # TRAINING SET TRAINING SET TRAINING SET TRAINING SET
-        train_xx = get_rand_indices(len_sentences, self._train_size,[])
+        self.train_xx = get_rand_indices(len_sentences, self._train_size,[])
+        self.test_xx = get_rand_indices(len_sentences, self._test_size,train_xx)
+        max_sentence_length(self.train_x_sets) #
+        max_sentence_length(self.test_x_sets) # IS THERE A MAXIMUM LENGTH???????
+
         XX = get_sentiment_indices([rows[r] for r in train_xx], self._sentcol)
         train_x_sets, train_x, train_y = munge_class_freqs(sentences,[XX['neg'],XX['pos']])
 
-        # TESTING SET TESTING SET TESTING SET TESTING SET
-        test_xx = get_rand_indices(len_sentences, self._test_size,train_xx)
         XX = get_sentiment_indices([rows[r] for r in test_xx], self._sentcol)
         test_x_sets, test_x, test_y = munge_class_freqs(sentences,[XX['neg'],XX['pos']])
+
 
         TT = {
             'train_x_sets': train_x_sets,
