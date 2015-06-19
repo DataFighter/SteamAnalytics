@@ -1,6 +1,6 @@
 
 
-import ast
+import ast, sys
 import numpy as np
 
 def JSON_minify(filename): # assumes it's in this directory
@@ -11,14 +11,18 @@ def JSON_minify(filename): # assumes it's in this directory
     eof = False
     while eof==False:
         line = f.readline()
-        if line==[]: eof==True; break
-        ex = line.find('\n')
-        if ex==-1: print "invalid parameter file..."
-        cx = line.find('#')
+        tmp_line = line
+        if tmp_line==[]:
+            eof==True; break
+        ex = tmp_line.find('\n')
+        if ex==-1: # eof
+            ex = len(tmp_line)
+            eof = True
+        cx = tmp_line.find('#')
         if cx==-1:
-            json += line[0:(ex-1)]
+            json += tmp_line[0:ex]
         else:
-            json += line[0:(cx-1)]
+            json += tmp_line[0:(cx-1)]
 
     dict = ast.literal_eval(json)
     return dict
@@ -186,10 +190,10 @@ def main(param_file):
     model_options = JSON_minify(param_file)
     print "model options", model_options
 
-    print 'Loading data'
-    train, valid, test = load_data(n_words       = model_options['n_words'],
-                                   valid_portion = model_options['0.05'],
-                                   maxlen        = model_options['maxlen'])
+    # print 'Loading data'
+    # train, valid, test = load_data(n_words       = model_options['n_words'],
+    #                                valid_portion = model_options['0.05'],
+    #                                maxlen        = model_options['maxlen'])
 
     ydim = np.max(train[1])+1
 
@@ -201,5 +205,5 @@ def main(param_file):
 
 
 if __name__ == '__main__':
-    filename = sys.argv[0]
+    filename = sys.argv[1]
     main(filename)

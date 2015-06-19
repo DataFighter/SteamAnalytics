@@ -29,123 +29,134 @@ from subprocess import Popen, PIPE	### Popen and PIPE should be added as we use 
 tokenizer_cmd = ['./tokenizer.perl', '-l', 'en', '-q', '-']
 DICTIONARY = []
 
-def tokenize(sentences):
+class synapsify_preprocess():
 
-    print 'Tokenizing..',
-    text = "\n".join(sentences)
-    tokenizer = Popen(tokenizer_cmd, stdin=PIPE, stdout=PIPE)
-    tok_text, _ = tokenizer.communicate(text)
-    toks = tok_text.split('\n')[:-1]
-    print 'Done'
+    def __init__(self,directory, filename, textcol, sentcol, train_size, test_size):
+        self._directory  = directory
+        self._filename   = filename
+        self._textcol    = textcol
+        self._sentcol    = sentcol
+        self._train_size = train_size
+        self._test_size  = test_size
+        self._model_options = JSON_minify(os.path.join(directory,filename))
 
-    return toks
+    def tokenize(self,sentences):
 
-def build_dict(sentences):
+        print 'Tokenizing..',
+        text = "\n".join(sentences)
+        tokenizer = Popen(tokenizer_cmd, stdin=PIPE, stdout=PIPE)
+        tok_text, _ = tokenizer.communicate(text)
+        toks = tok_text.split('\n')[:-1]
+        print 'Done'
 
-    sentences = tokenize(sentences)
+        return toks
 
-    print 'Building dictionary..',
-    wordcount = dict()
-    for ss in sentences:
-        words = ss.strip().lower().split()
-        for w in words:
-            if w not in wordcount:
-                wordcount[w] = 1
-            else:
-                wordcount[w] += 1
+    def build_dict(self,sentences):
 
-    counts = wordcount.values()
-    keys = wordcount.keys()
+        sentences = tokenize(sentences)
 
-    sorted_idx = np.argsort(counts)[::-1]
+        print 'Building dictionary..',
+        wordcount = dict()
+        for ss in sentences:
+            words = ss.strip().lower().split()
+            for w in words:
+                if w not in wordcount:
+                    wordcount[w] = 1
+                else:
+                    wordcount[w] += 1
 
-    worddict = dict()
+        counts = wordcount.values()
+        keys = wordcount.keys()
 
-    for idx, ss in enumerate(sorted_idx):
-        worddict[keys[ss]] = idx+2  # leave 0 and 1 (UNK)
+        sorted_idx = np.argsort(counts)[::-1]
 
-    print np.sum(counts), ' total words ', len(keys), ' unique words'
+        worddict = dict()
 
-    return worddict
+        for idx, ss in enumerate(sorted_idx):
+            worddict[keys[ss]] = idx+2  # leave 0 and 1 (UNK)
+
+        print np.sum(counts), ' total words ', len(keys), ' unique words'
+
+        return worddict
 
 
-def format_sentence_frequencies(sentences):
+    def format_sentence_frequencies(sentences):
 
-    sentences = tokenize(sentences)
+        sentences = tokenize(sentences)
 
-    seqs = [None] * len(sentences)
-    for idx, ss in enumerate(sentences):
-        words = ss.strip().lower().split()
-        seqs[idx] = [DICTIONARY[w] if w in DICTIONARY else 1 for w in words]
+        seqs = [None] * len(sentences)
+        for idx, ss in enumerate(sentences):
+            words = ss.strip().lower().split()
+            seqs[idx] = [DICTIONARY[w] if w in DICTIONARY else 1 for w in words]
 
-    return seqs
+        return seqs
 
-def get_sentiment_indices(rows, sentcol):
+    def get_sentiment_indices(rows, sentcol):
 
-    # sx = np.where(np.in1d(sent_flags, row[sentcol]))[0]
-    XX = {}
-    XX['pos'] = [r for r,row in enumerate(rows) if ((row[sentcol]=='Positive') | (row[sentcol]=='Neutral'))]
-    XX['neg'] = [r for r,row in enumerate(rows) if ((row[sentcol]=='Negative') | (row[sentcol]=='Mixed'))]
-    return XX
+        # sx = np.where(np.in1d(sent_flags, row[sentcol]))[0]
+        XX = {}
+        XX['pos'] = [r for r,row in enumerate(rows) if ((row[sentcol]=='Positive') | (row[sentcol]=='Neutral'))]
+        XX['neg'] = [r for r,row in enumerate(rows) if ((row[sentcol]=='Negative') | (row[sentcol]=='Mixed'))]
+        return XX
 
-def munge_class_freqs(sentences,index_sets):
+    def munge_class_freqs(sentences,index_sets):
 
-    # A variation on the original LSTM code,
-    freqs_x_sets = []
-    freqs_x = []
-    freqs_y = []
-    for y,xx in enumerate(index_sets):
-        x_set = format_sentence_frequencies([sentences[x] for x in xx])
-        freqs_x_sets.append( x_set)
-        freqs_x = freqs_x + x_set
-        freqs_y = freqs_y + [y]*len(x_set)
+        # A variation on the original LSTM code,
+        freqs_x_sets = []
+        freqs_x = []
+        freqs_y = []
+        for y,xx in enumerate(index_sets):
+            x_set = format_sentence_frequencies([sentences[x] for x in xx])
+            freqs_x_sets.append( x_set)
+            freqs_x = freqs_x + x_set
+            freqs_y = freqs_y + [y]*len(x_set)
 
-    return freqs_x_sets, freqs_x, freqs_y
+        return freqs_x_sets, freqs_x, freqs_y
 
-def get_rand_indices(len_set, num_indices, forbidden):
-    """
-    Function is designed to extract test or training set indices
-    :param len_set:
-    :param num_indices:
-    :param forbidden:
-    :return:
-    """
+    def get_rand_indices(len_set, num_indices, forbidden):
+        """
+        Function is designed to extract test or training set indices
+        :param len_set:
+        :param num_indices:
+        :param forbidden:
+        :return:
+        """
 
-    # I just want to get this working and move on
-    initial = len(forbidden)-1
-    XX = range(initial,initial+num_indices)
-    if XX[-1]>len_set: print "Test/Train set indices are out of bounds!!"
-    return XX
+        # I just want to get this working and move on
+        initial = len(forbidden)-1
+        XX = range(initial,initial+num_indices)
+        if XX[-1]>len_set: print "Test/Train set indices are out of bounds!!"
+        return XX
 
-def main(directory, filename, textcol, sentcol, train_size, test_size):
+    def main():
 
-    # For Synapsify Core output, the comments are in the first column
-    #   and the sentiment is in the 6th column
-    header, rows = sh.get_spreadsheet_rows(os.path.join(directory, filename) ,textcol)
-    sentences = [str(S[textcol]) for s, S in enumerate(rows)]
-    len_sentences = len(sentences)
-    DICTIONARY = build_dict(sentences)
+        # For Synapsify Core output, the comments are in the first column
+        #   and the sentiment is in the 6th column
+        header, rows = sh.get_spreadsheet_rows(os.path.join(self._directory, self._filename) ,self._textcol)
+        sentences = [str(S[self._textcol]) for s, S in enumerate(rows)]
+        len_sentences = len(sentences)
+        DICTIONARY = build_dict(sentences)
 
-    # TRAINING SET TRAINING SET TRAINING SET TRAINING SET
-    train_xx = get_rand_indices(len_sentences, train_size,[])
-    XX = get_sentiment_indices([rows[r] for r in train_xx], sentcol)
-    train_x_sets, train_x, train_y = munge_class_freqs(sentences,[XX['neg'],XX['pos']])
+        # TRAINING SET TRAINING SET TRAINING SET TRAINING SET
+        train_xx = get_rand_indices(len_sentences, self._train_size,[])
+        XX = get_sentiment_indices([rows[r] for r in train_xx], self._sentcol)
+        train_x_sets, train_x, train_y = munge_class_freqs(sentences,[XX['neg'],XX['pos']])
 
-    # TESTING SET TESTING SET TESTING SET TESTING SET
-    test_xx = get_rand_indices(len_sentences, test_size,train_xx)
-    XX = get_sentiment_indices([rows[r] for r in test_xx], sentcol)
-    test_x_sets, test_x, test_y = munge_class_freqs(sentences,[XX['neg'],XX['pos']])
+        # TESTING SET TESTING SET TESTING SET TESTING SET
+        test_xx = get_rand_indices(len_sentences, self._test_size,train_xx)
+        XX = get_sentiment_indices([rows[r] for r in test_xx], self._sentcol)
+        test_x_sets, test_x, test_y = munge_class_freqs(sentences,[XX['neg'],XX['pos']])
 
-    TT = {
-        'train_x_sets': train_x_sets,
-        'train_x': train_x,
-        'train_y': train_y,
-        'test_x_sets': test_x_sets,
-        'test_x': test_x,
-        'test_y': test_y
-    }
+        TT = {
+            'train_x_sets': train_x_sets,
+            'train_x': train_x,
+            'train_y': train_y,
+            'test_x_sets': test_x_sets,
+            'test_x': test_x,
+            'test_y': test_y
+        }
 
-    return TT
+        return TT
 
 if __name__ == '__main__':
     directory = sys.argv[1]
