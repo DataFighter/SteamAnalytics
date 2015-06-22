@@ -102,16 +102,16 @@ class synapsify_preprocess():
     def munge_class_freqs(sentences,index_sets):
 
         # A variation on the original LSTM code,
-        freqs_x_sets = []
+        # freqs_x_sets = []
         freqs_x = []
         freqs_y = []
         for y,xx in enumerate(index_sets):
             x_set = format_sentence_frequencies([sentences[x] for x in xx])
-            freqs_x_sets.append( x_set)
-            freqs_x = freqs_x + x_set
-            freqs_y = freqs_y + [y]*len(x_set)
+            # freqs_x_sets.append( x_set)
+            freqs_x += x_set
+            freqs_y += [y]*len(x_train)
 
-        return freqs_x_sets, freqs_x, freqs_y
+        return (freqs_x, freqs_y)
 
     def get_rand_indices(len_set, num_indices, forbidden):
         """
@@ -129,6 +129,7 @@ class synapsify_preprocess():
         return XX
 
     def max_sentence_length(self):
+        '''From imdb.py'''
         # from m
         # train_set = self.train_xx ?????
         maxlen = self._model_options['maxlen']
@@ -141,6 +142,25 @@ class synapsify_preprocess():
         train_set = (new_train_set_x, new_train_set_y)
         del new_train_set_x, new_train_set_y
 
+    def split_train_w_valid_set(self, train_set):
+        '''From imdb.py'''
+        valid_portion = self._model_options['valid_portion']
+        train_set_x, train_set_y = train_set	### trian_set_x means all attributes of each instance, and train_set_y means all labels for each instance.
+        n_samples = len(train_set_x)
+        sidx = np.random.permutation(n_samples)	### Shuffle the index of the training dataset
+        n_train = int(np.round(n_samples * (1. - valid_portion)))	### means the number of train data set.
+        ### Partition the train dataset into two parts: the train set and the validation set.
+        valid_set_x = [train_set_x[s] for s in sidx[n_train:]]
+        valid_set_y = [train_set_y[s] for s in sidx[n_train:]]
+        train_set_x = [train_set_x[s] for s in sidx[:n_train]]
+        train_set_y = [train_set_y[s] for s in sidx[:n_train]]
+
+        return valid_set_x, valid_set_y, train_set_x, train_set_y
+
+    def remove_unk(self,x):
+        '''Set the value of word who is not in the dictionary to 1.'''
+        return [[1 if w >= self._n_words else w for w in sen] for sen in x]
+
     def main():
 
         # For Synapsify Core output, the comments are in the first column
@@ -150,29 +170,35 @@ class synapsify_preprocess():
         len_sentences = len(sentences)
         DICTIONARY = build_dict(sentences)
 
-        # TRAINING SET TRAINING SET TRAINING SET TRAINING SET
+        # Randomly split train and test data
         self.train_xx = get_rand_indices(len_sentences, self._train_size,[])
         self.test_xx = get_rand_indices(len_sentences, self._test_size,train_xx)
-        max_sentence_length(self.train_x_sets) #
-        max_sentence_length(self.test_x_sets) # IS THERE A MAXIMUM LENGTH???????
+        # max_sentence_length(self.train_x_sets) #
+        # max_sentence_length(self.test_x_sets) # IS THERE A MAXIMUM LENGTH???????
 
-        XX = get_sentiment_indices([rows[r] for r in train_xx], self._sentcol)
-        train_x_sets, train_x, train_y = munge_class_freqs(sentences,[XX['neg'],XX['pos']])
+        # Grab the indices for the Core sentiment
+        trXX = get_sentiment_indices([rows[r] for r in train_xx], self._sentcol)
+        teXX = get_sentiment_indices([rows[r] for r in test_xx], self._sentcol)
 
-        XX = get_sentiment_indices([rows[r] for r in test_xx], self._sentcol)
-        test_x_sets, test_x, test_y = munge_class_freqs(sentences,[XX['neg'],XX['pos']])
+        # Munge training and test sets for the classes provided
+        train = munge_class_freqs(sentences,[trXX['neg'],trXX['pos']])
+        test  = munge_class_freqs(sentences,[teXX['neg'],teXX['pos']])
 
+        # Split training into a validation set per the model parameter
+        valid_set_x, valid_set_y, train_set_x, train_set_y = split_train_w_valid_set( train)
 
-        TT = {
-            'train_x_sets': train_x_sets,
-            'train_x': train_x,
-            'train_y': train_y,
-            'test_x_sets': test_x_sets,
-            'test_x': test_x,
-            'test_y': test_y
+        # Remove unknown words
+        train_set_x = remove_unk(train_set_x)
+        valid_set_x = remove_unk(valid_set_x)
+        test_set_x  = remove_unk(test[0])
+
+        TVT = {
+            'train': (train_set_x, train_set_y),
+            'valid': (valid_set_x, valid_set_y),
+            'test': (test_set_x,test[1])
         }
 
-        return TT
+        return TVT
 
 if __name__ == '__main__':
     directory = sys.argv[1]
