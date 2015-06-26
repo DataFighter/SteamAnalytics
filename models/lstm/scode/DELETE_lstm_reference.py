@@ -17,6 +17,7 @@ import imdb
 
 datasets = {'imdb': (imdb.load_data, imdb.prepare_data)}
 
+class LSTM():
 
 def get_minibatches_idx(n, minibatch_size, shuffle=False):
     """

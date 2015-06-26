@@ -23,13 +23,19 @@ use warnings;
 use FindBin qw($RealBin);
 use strict;
 use Time::HiRes;
+use Cwd 'abs_path';
+use File::Basename;
 
 if  (eval {require Thread;1;}) {
   #module loaded
   Thread->import();
 }
 
-my $mydir = "nonbreaking_prefixes";
+my $cwfile = abs_path($0);
+my($filename, $cwd, $suffix) = fileparse($cwfile);
+print STDERR "Working Directory: '$cwd' \n";
+my $mydir = join('', $cwd,"nonbreaking_prefixes");
+# my $mydir = "nonbreaking_prefixes";
 
 my %NONBREAKING_PREFIX = ();
 my @protected_patterns = ();
@@ -524,6 +530,7 @@ sub load_prefixes
     my ($language, $PREFIX_REF) = @_;
 
     my $prefixfile = "$mydir/nonbreaking_prefix.$language";
+    print STDERR "Prefix File: '$prefixfile' \n";
 
     #default back to English if we don't have a language-specific prefix file
     if (!(-e $prefixfile))

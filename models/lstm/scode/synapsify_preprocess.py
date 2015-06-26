@@ -17,7 +17,9 @@ Output:
 import os, sys, inspect
 import numpy as np
 
-cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile( inspect.currentframe() ))[0],"../../../Synapsify")))
+# If IdeaNets are treated as a module, this addition should not be necessary.
+this_dir = os.path.split(inspect.getfile( inspect.currentframe() ))[0]
+cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(this_dir,"../../../Synapsify")))
 if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 
@@ -26,21 +28,25 @@ import sys		### Should be added if we use the package "sys"
 from subprocess import Popen, PIPE	### Popen and PIPE should be added as we use its functions
 
 # tokenizer.perl is from Moses: https://github.com/moses-smt/mosesdecoder/tree/master/scripts/tokenizer
-tokenizer_cmd = ['./tokenizer.perl', '-l', 'en', '-q', '-']
-DICTIONARY = []
+tokenizer_dir_file = os.path.realpath(os.path.abspath(os.path.join(this_dir,'./tokenizer.perl')))
+tokenizer_cmd = [tokenizer_dir_file, '-l', 'en', '-q', '-']
 
-class synapsify_preprocess():
+class Preprocess():
 
-    def __init__(self,directory, filename, textcol, sentcol, train_size, test_size):
-        self._directory  = directory
-        self._filename   = filename
-        self._textcol    = textcol
-        self._sentcol    = sentcol
-        self._train_size = train_size
-        self._test_size  = test_size
-        self._model_options = JSON_minify(os.path.join(directory,filename))
+    @classmethod
+    def __init__(self, model_options):
+        self._data_directory  = os.path.realpath(os.path.abspath(os.path.join(this_dir,model_options['data_directory'])))
+        self._data_file  = model_options['data_file']
+        self._text_col   = model_options['text_col']
+        self._label_col  = model_options['label_col']
+        self._train_size = model_options['train_size']
+        self._test_size  = model_options['test_size']
+        self._n_words    = model_options['n_words']
+        self._model_options = model_options #JSON_minify(os.path.join(directory,filename))
+        self._DICTIONARY = []
 
-    def tokenize(self,sentences):
+    @staticmethod
+    def _tokenize(sentences):
 
         print 'Tokenizing..',
         text = "\n".join(sentences)
@@ -51,9 +57,10 @@ class synapsify_preprocess():
 
         return toks
 
-    def build_dict(self,sentences):
+    @classmethod
+    def _build_dict(self, sentences):
 
-        sentences = tokenize(sentences)
+        sentences = self._tokenize(sentences)
 
         print 'Building dictionary..',
         wordcount = dict()
@@ -79,19 +86,20 @@ class synapsify_preprocess():
 
         return worddict
 
+    @classmethod
+    def _format_sentence_frequencies(self,sentences):
 
-    def format_sentence_frequencies(sentences):
-
-        sentences = tokenize(sentences)
+        sentences = self._tokenize(sentences)
 
         seqs = [None] * len(sentences)
         for idx, ss in enumerate(sentences):
             words = ss.strip().lower().split()
-            seqs[idx] = [DICTIONARY[w] if w in DICTIONARY else 1 for w in words]
+            seqs[idx] = [self._DICTIONARY[w] if w in self._DICTIONARY else 1 for w in words]
 
         return seqs
 
-    def get_sentiment_indices(rows, sentcol):
+    @classmethod
+    def _get_sentiment_indices(self,rows, sentcol):
 
         # sx = np.where(np.in1d(sent_flags, row[sentcol]))[0]
         XX = {}
@@ -99,21 +107,23 @@ class synapsify_preprocess():
         XX['neg'] = [r for r,row in enumerate(rows) if ((row[sentcol]=='Negative') | (row[sentcol]=='Mixed'))]
         return XX
 
-    def munge_class_freqs(sentences,index_sets):
+    @classmethod
+    def _munge_class_freqs(self,sentences,index_sets):
 
         # A variation on the original LSTM code,
         # freqs_x_sets = []
         freqs_x = []
         freqs_y = []
         for y,xx in enumerate(index_sets):
-            x_set = format_sentence_frequencies([sentences[x] for x in xx])
+            x_set = self._format_sentence_frequencies([sentences[x] for x in xx])
             # freqs_x_sets.append( x_set)
             freqs_x += x_set
-            freqs_y += [y]*len(x_train)
+            freqs_y += [y]*len(x_set)
 
         return (freqs_x, freqs_y)
 
-    def get_rand_indices(len_set, num_indices, forbidden):
+    @classmethod
+    def _get_rand_indices(self,len_set, num_indices, forbidden):
         """
         Function is designed to extract test or training set indices
         :param len_set:
@@ -142,7 +152,8 @@ class synapsify_preprocess():
         train_set = (new_train_set_x, new_train_set_y)
         del new_train_set_x, new_train_set_y
 
-    def split_train_w_valid_set(self, train_set):
+    @classmethod
+    def _split_train_w_valid_set(self, train_set):
         '''From imdb.py'''
         valid_portion = self._model_options['valid_portion']
         train_set_x, train_set_y = train_set	### trian_set_x means all attributes of each instance, and train_set_y means all labels for each instance.
@@ -157,48 +168,54 @@ class synapsify_preprocess():
 
         return valid_set_x, valid_set_y, train_set_x, train_set_y
 
-    def remove_unk(self,x):
+    @classmethod
+    def _remove_unk(self,x):
         '''Set the value of word who is not in the dictionary to 1.'''
         return [[1 if w >= self._n_words else w for w in sen] for sen in x]
 
-    def main():
+    @classmethod
+    def preprocess(self):
 
         # For Synapsify Core output, the comments are in the first column
         #   and the sentiment is in the 6th column
-        header, rows = sh.get_spreadsheet_rows(os.path.join(self._directory, self._filename) ,self._textcol)
-        sentences = [str(S[self._textcol]) for s, S in enumerate(rows)]
+        header, rows = sh.get_spreadsheet_rows(os.path.join(self._data_directory, self._data_file) ,self._text_col)
+        sentences = [str(S[self._text_col]) for s, S in enumerate(rows)]
         len_sentences = len(sentences)
-        DICTIONARY = build_dict(sentences)
+        self._DICTIONARY = self._build_dict(sentences)
 
         # Randomly split train and test data
-        self.train_xx = get_rand_indices(len_sentences, self._train_size,[])
-        self.test_xx = get_rand_indices(len_sentences, self._test_size,train_xx)
+        self._train_xx = self._get_rand_indices(len_sentences, self._train_size,[])
+        self._test_xx  = self._get_rand_indices(len_sentences, self._test_size,self._train_xx)
         # max_sentence_length(self.train_x_sets) #
         # max_sentence_length(self.test_x_sets) # IS THERE A MAXIMUM LENGTH???????
 
         # Grab the indices for the Core sentiment
-        trXX = get_sentiment_indices([rows[r] for r in train_xx], self._sentcol)
-        teXX = get_sentiment_indices([rows[r] for r in test_xx], self._sentcol)
+        trXX = self._get_sentiment_indices([rows[r] for r in self._train_xx], self._label_col)
+        teXX = self._get_sentiment_indices([rows[r] for r in self._test_xx], self._label_col)
 
         # Munge training and test sets for the classes provided
-        train = munge_class_freqs(sentences,[trXX['neg'],trXX['pos']])
-        test  = munge_class_freqs(sentences,[teXX['neg'],teXX['pos']])
+        train = self._munge_class_freqs(sentences,[trXX['neg'],trXX['pos']])
+        test  = self._munge_class_freqs(sentences,[teXX['neg'],teXX['pos']])
 
         # Split training into a validation set per the model parameter
-        valid_set_x, valid_set_y, train_set_x, train_set_y = split_train_w_valid_set( train)
+        valid_set_x, valid_set_y, train_set_x, train_set_y = self._split_train_w_valid_set( train)
 
         # Remove unknown words
-        train_set_x = remove_unk(train_set_x)
-        valid_set_x = remove_unk(valid_set_x)
-        test_set_x  = remove_unk(test[0])
+        train_set_x = self._remove_unk(train_set_x)
+        valid_set_x = self._remove_unk(valid_set_x)
+        test_set_x  = self._remove_unk(test[0])
 
-        TVT = {
-            'train': (train_set_x, train_set_y),
-            'valid': (valid_set_x, valid_set_y),
-            'test': (test_set_x,test[1])
-        }
+        self.train_set = (train_set_x, train_set_y)
+        self.valid_set = (valid_set_x, valid_set_y)
+        self.test_set  = (test_set_x, test[1])
 
-        return TVT
+        # TVT = {
+        #     'train': (train_set_x, train_set_y),
+        #     'valid': (valid_set_x, valid_set_y),
+        #     'test': (test_set_x,test[1])
+        # }
+
+        return self
 
 if __name__ == '__main__':
     directory = sys.argv[1]
@@ -214,4 +231,4 @@ if __name__ == '__main__':
     ### The main function should take six parameters instead of four
     ### The original code is:
     ### main(directory, filename, textcol, sentcol)
-    main(directory, filename, textcol, sentcol, train_size, test_size)
+    load(directory, filename, textcol, sentcol, train_size, test_size)

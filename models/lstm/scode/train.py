@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 The calling function for loading models and parameters, building models,
     and running the lstm model again some dataset.
@@ -22,19 +24,27 @@ First you instantiate the object, depending on the instantiation there are a ser
 
 # from Synapsify.loadCleanly import sheets as sh
 
+import os, sys, inspect
+import numpy as np
 import synapsify_preprocess as spp
 import load_params as lp
-import build_model as bm
-import train_ideanet as tin
+# import build_model as bm
+# import lstm_class as LSTM
+
+default_dir = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile( inspect.currentframe() ))[0],"../params")))
+default_params = 'orig_params.json'
 
 class IdeaNet(): # Is it possible to inherit any of the other classes for building these IdeaNets?
 
-    def __init__(self, **kwargs):
-        num_args = kwargs.keys()
+    def __init__(self, directory=default_dir, paramfile=default_params, **kwargs):
+        num_args = len(kwargs.keys())
         if num_args >0:
             self._directory = kwargs['directory']
             self._filename  = kwargs['filename']
-            self._param_file = os.join(self._directory,self._filename)
+        else:
+            self._directory = directory
+            self._filename  = paramfile
+        self._param_file = os.path.join(self._directory, self._filename)
 
     def __iter__(self):
         '''What would we stream? It would have to be loading something and operating on it
@@ -66,11 +76,19 @@ class IdeaNet(): # Is it possible to inherit any of the other classes for buildi
         self._train_size = train_size
         self._test_size  = test_size
 
-        self._params, self._model_options = load_params_data(TT,self._param_file)
-
         # Copying the imdb_preprocess.py process
         SPP = spp(self._directory, self._filename, textcol, sentcol, train_size, test_size)
-        TVT = SPP.main() #assume it has 'valid' fields.
+        TVT = SPP.main() # assume it has 'valid' fields.
+
+        # Model options
+        self._model_options = lp.JSON_minify(self._param_file)
+        print "model options: ", self._model_options
+
+        ydim = np.max(TVT['train'][1])+1
+        self._model_options['ydim'] = ydim # Depends on data used, so can't be loaded
+
+        self._params = lp.init_params(self._model_options)
+        print "model parameters: ", self._params
 
     def gen_tag_tvt(self):
         '''Not sure what this will entail yet, but I believe we will need to move beyond sentiment'''
@@ -92,11 +110,12 @@ class IdeaNet(): # Is it possible to inherit any of the other classes for buildi
     #====================================================================
     def train(self):
 
-        LSTM = train_lstm(lstm_model) # Object?
+        LSTM = LSTM(self._params,self._model_options)
+        LSTM = LSTM.train() # are all the parameters on initialization?
 
     #====================================================================
     # COMPARE LSTM COMPARE LSTM COMPARE LSTM COMPARE LSTM COMPARE LSTM
     #====================================================================
 
-    tagged_data = LSTM(tag_this_data?)
-    calc_lstm_stats(tagged_data)
+    # tagged_data = LSTM(tag_this_data?)
+    # calc_lstm_stats(tagged_data)
