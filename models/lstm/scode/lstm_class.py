@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import theano, ast
+import theano, copy
 import theano.tensor as tensor
 from theano import config
 import numpy as np
@@ -11,14 +11,15 @@ from load_params import Load_LSTM_Params
 
 class LSTM(object):
 
-    _tparams = None
+    tparams = None
+    params  = None
 
     @classmethod
     def __init__(self,PD): # PD = Params Data
 
         self.PD = PD
         self._layers = {'lstm': (self._param_init_lstm, self._lstm_layer)}
-        self.params = self._init_params(PD.model_options)
+        # self.params = self._init_params(PD.model_options)
         # _tparams = self._init_tparams(self.params)
         self.model_options = PD.model_options
         self.optimizer = self.model_options['optimizer']
@@ -263,10 +264,14 @@ class LSTM(object):
     def build_model(self):
 
         print 'Building model'
-
-        _tparams = self._init_tparams(self.params)
+        model_options = copy.deepcopy(self.model_options)
+        params  = self._init_params(model_options)
+        tparams = self._init_tparams(params)
 
         if self.optimizer=='adadelta':
+
+            optimizer = self.adadelta
+
             # use_noise is for dropout
             (use_noise,
              x,
@@ -274,26 +279,26 @@ class LSTM(object):
              y,
              f_pred_prob,
              f_pred,
-             cost) = self._build_model(_tparams, self.model_options)
+             cost) = self._build_model(tparams, model_options)
 
             print 'Done. Setting up Optimization Function'
 
             decay_c = self.PD.model_options['decay_c']
             if decay_c > 0.:
                 decay_c = theano.shared(np.float32(decay_c), name='decay_c')
-                self.weight_decay = 0.
-                self.weight_decay += (_tparams['U']**2).sum()
-                self.weight_decay *= decay_c
-                cost += self.weight_decay
+                weight_decay = 0.
+                weight_decay += (tparams['U']**2).sum()
+                weight_decay *= decay_c
+                cost += weight_decay
 
             self.model_options['decay_c'] = decay_c
             f_cost = theano.function([x, mask, y], cost, name='f_cost')
 
-            grads = tensor.grad(cost, wrt=_tparams.values())
+            grads = tensor.grad(cost, wrt=tparams.values())
             f_grad = theano.function([x, mask, y], grads, name='f_grad')
 
             lr = tensor.scalar(name='lr')
-            self.f_grad_shared, self.f_update = self.adadelta(lr, _tparams, grads, x, mask, y, cost)
+            self.f_grad_shared, self.f_update = optimizer(lr, tparams, grads, x, mask, y, cost)
         else:
             print "We do not have any other optimizers, stop being difficult and choose one we already have ready."
 
