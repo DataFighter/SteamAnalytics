@@ -2,8 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="212786ef-fbcb-4264-a7a9-ba4fae586455" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/models/lstm/scode/lstm_utils.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Synapsify" afterPath="$PROJECT_DIR$/Synapsify" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/models/lstm/scode/lstm_class.py" afterPath="$PROJECT_DIR$/models/lstm/scode/lstm_class.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/colearn/test_colearn.py" afterPath="$PROJECT_DIR$/colearn/test_colearn.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="IdeaNets.iws" />
@@ -30,11 +32,11 @@
     <splitter split-orientation="horizontal" split-proportion="0.5">
       <split-first>
         <leaf>
-          <file leaf-file-name="lstm1.py" pinned="false" current-in-tab="true">
+          <file leaf-file-name="lstm1.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/models/lstm/code/lstm1.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="1.3810624" vertical-offset="8132" max-vertical-offset="8910">
-                  <caret line="582" column="69" selection-start-line="582" selection-start-column="65" selection-end-line="582" selection-end-column="69" />
+                <state vertical-scroll-proportion="-153.40909" vertical-offset="0" max-vertical-offset="8910">
+                  <caret line="450" column="0" selection-start-line="450" selection-start-column="0" selection-end-line="450" selection-end-column="0" />
                   <folding>
                     <element signature="e#41#76#0" expanded="true" />
                   </folding>
@@ -52,6 +54,30 @@
               </provider>
             </entry>
           </file>
+          <file leaf-file-name="lstm_class.py" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/models/lstm/scode/lstm_class.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state vertical-scroll-proportion="-6.181818" vertical-offset="3470" max-vertical-offset="4080">
+                  <caret line="254" column="0" selection-start-line="254" selection-start-column="0" selection-end-line="254" selection-end-column="0" />
+                  <folding>
+                    <element signature="e#23#42#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="lstm_utils.py" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/models/lstm/scode/lstm_utils.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state vertical-scroll-proportion="-8.192307" vertical-offset="1947" max-vertical-offset="3615">
+                  <caret line="144" column="0" selection-start-line="144" selection-start-column="0" selection-end-line="144" selection-end-column="0" />
+                  <folding>
+                    <element signature="e#23#42#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
           <file leaf-file-name="__init__.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/colearn/__init__.py">
               <provider selected="true" editor-type-id="text-editor">
@@ -62,11 +88,11 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="test_colearn.py" pinned="false" current-in-tab="false">
+          <file leaf-file-name="test_colearn.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/colearn/test_colearn.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="600">
-                  <caret line="32" column="45" selection-start-line="32" selection-start-column="45" selection-end-line="32" selection-end-column="45" />
+                <state vertical-scroll-proportion="0.8120301" vertical-offset="0" max-vertical-offset="665">
+                  <caret line="36" column="0" selection-start-line="36" selection-start-column="0" selection-end-line="36" selection-end-column="0" />
                   <folding />
                 </state>
               </provider>
@@ -85,7 +111,7 @@
           <file leaf-file-name="load_params.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/models/lstm/scode/load_params.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2280">
+                <state vertical-scroll-proportion="0.0" vertical-offset="480" max-vertical-offset="2280">
                   <caret line="32" column="32" selection-start-line="32" selection-start-column="32" selection-end-line="32" selection-end-column="32" />
                   <folding>
                     <element signature="e#23#51#0" expanded="true" />
@@ -113,7 +139,7 @@
           <file leaf-file-name="load_params.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/models/lstm/scode/load_params.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="-8.0" vertical-offset="1502" max-vertical-offset="2280">
+                <state vertical-scroll-proportion="0.0" vertical-offset="1502" max-vertical-offset="2280">
                   <caret line="114" column="22" selection-start-line="114" selection-start-column="8" selection-end-line="114" selection-end-column="22" />
                   <folding>
                     <element signature="e#23#51#0" expanded="true" />
@@ -125,18 +151,28 @@
           <file leaf-file-name="orig_params.json" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/models/lstm/params/orig_params.json">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="-16.25" vertical-offset="0" max-vertical-offset="480">
-                  <caret line="26" column="1" selection-start-line="26" selection-start-column="1" selection-end-line="26" selection-end-column="1" />
+                <state vertical-scroll-proportion="-1.25" vertical-offset="0" max-vertical-offset="480">
+                  <caret line="2" column="17" selection-start-line="2" selection-start-column="17" selection-end-line="2" selection-end-column="17" />
                   <folding />
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="lstm_class.py" pinned="false" current-in-tab="true">
+          <file leaf-file-name="lstm_class.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/models/lstm/scode/lstm_class.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.33333334" vertical-offset="655" max-vertical-offset="4845">
-                  <caret line="53" column="8" selection-start-line="53" selection-start-column="8" selection-end-line="54" selection-end-column="70" />
+                <state vertical-scroll-proportion="-17.884615" vertical-offset="2880" max-vertical-offset="4080">
+                  <caret line="223" column="0" selection-start-line="223" selection-start-column="0" selection-end-line="223" selection-end-column="0" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="lstm_utils.py" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/models/lstm/scode/lstm_utils.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="3615">
+                  <caret line="8" column="0" selection-start-line="8" selection-start-column="0" selection-end-line="18" selection-end-column="34" />
                   <folding>
                     <element signature="e#23#42#0" expanded="true" />
                   </folding>
@@ -156,11 +192,23 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="lstm1.py" pinned="false" current-in-tab="false">
+          <file leaf-file-name="lstm1.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/models/lstm/code/lstm1.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="-10.538462" vertical-offset="5291" max-vertical-offset="8730">
-                  <caret line="383" column="40" selection-start-line="383" selection-start-column="40" selection-end-line="383" selection-end-column="40" />
+                <state vertical-scroll-proportion="0.6198083" vertical-offset="6437" max-vertical-offset="8910">
+                  <caret line="455" column="4" selection-start-line="455" selection-start-column="4" selection-end-line="455" selection-end-column="33" />
+                  <folding>
+                    <element signature="e#41#76#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="imdb.py" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/models/lstm/code/imdb.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state vertical-scroll-proportion="0.0" vertical-offset="1547" max-vertical-offset="2520">
+                  <caret line="119" column="0" selection-start-line="119" selection-start-column="0" selection-end-line="119" selection-end-column="0" />
                   <folding />
                 </state>
               </provider>
@@ -194,19 +242,23 @@
         <option value="$PROJECT_DIR$/__init__py" />
         <option value="$PROJECT_DIR$/__init__.py" />
         <option value="$PROJECT_DIR$/models/lstm/scode/test_slstm.py" />
-        <option value="$PROJECT_DIR$/models/lstm/params/orig_params.json" />
         <option value="$PROJECT_DIR$/models/lstm/scode/tokenizer.perl" />
         <option value="$PROJECT_DIR$/models/lstm/scode/synapsify_preprocess.py" />
         <option value="$PROJECT_DIR$/models/lstm/scode/load_params.py" />
         <option value="$PROJECT_DIR$/models/lstm/scode/build_model.py" />
+        <option value="$PROJECT_DIR$/models/lstm/code/lstm1.py" />
+        <option value="$PROJECT_DIR$/models/lstm/params/orig_params.json" />
+        <option value="$PROJECT_DIR$/models/lstm/scode/lstm_utils.py" />
         <option value="$PROJECT_DIR$/colearn/test_colearn.py" />
         <option value="$PROJECT_DIR$/models/lstm/scode/lstm_class.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="width" value="1440" />
-    <option name="height" value="900" />
+    <option name="x" value="1440" />
+    <option name="y" value="-504" />
+    <option name="width" value="1920" />
+    <option name="height" value="1080" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <OptionsSetting value="true" id="Add" />
@@ -231,7 +283,6 @@
       <sortByType />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -334,10 +385,11 @@
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../Naytev" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../DC2/git/data_lake_api" />
     <property name="FullScreen" value="true" />
     <property name="recentsLimit" value="5" />
     <property name="restartRequiresConfirmation" value="true" />
@@ -593,16 +645,16 @@
     <configuration />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="0" width="1440" height="900" extended-state="6" />
+    <frame x="1440" y="-504" width="1920" height="1080" extended-state="0" />
     <editor active="false" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.1726568" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.1721959" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32932693" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="true" anchor="bottom" auto_hide="true" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.41466346" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="true" anchor="bottom" auto_hide="true" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.3152174" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -653,23 +705,38 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="python-line">
           <url>file://$PROJECT_DIR$/models/lstm/code/lstm1.py</url>
-          <line>411</line>
-          <option name="timeStamp" value="28" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="python-line">
-          <url>file://$PROJECT_DIR$/models/lstm/code/lstm1.py</url>
-          <line>331</line>
-          <option name="timeStamp" value="29" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="python-line">
-          <url>file://$PROJECT_DIR$/models/lstm/code/imdb.py</url>
-          <line>119</line>
-          <option name="timeStamp" value="30" />
+          <line>248</line>
+          <option name="timeStamp" value="60" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="python-line">
           <url>file://$PROJECT_DIR$/models/lstm/scode/lstm_class.py</url>
-          <line>53</line>
-          <option name="timeStamp" value="59" />
+          <line>246</line>
+          <option name="timeStamp" value="68" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="python-line">
+          <url>file://$PROJECT_DIR$/models/lstm/scode/lstm_utils.py</url>
+          <line>231</line>
+          <option name="timeStamp" value="70" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="python-line">
+          <url>file://$PROJECT_DIR$/models/lstm/scode/lstm_utils.py</url>
+          <line>204</line>
+          <option name="timeStamp" value="72" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="python-line">
+          <url>file://$PROJECT_DIR$/models/lstm/code/lstm1.py</url>
+          <line>443</line>
+          <option name="timeStamp" value="73" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="python-line">
+          <url>file://$PROJECT_DIR$/models/lstm/scode/lstm_utils.py</url>
+          <line>144</line>
+          <option name="timeStamp" value="74" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="python-line">
+          <url>file://$PROJECT_DIR$/models/lstm/scode/lstm_class.py</url>
+          <line>168</line>
+          <option name="timeStamp" value="75" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -679,16 +746,36 @@
           </properties>
         </breakpoint>
       </default-breakpoints>
-      <option name="time" value="60" />
+      <option name="time" value="77" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/models/lstm/code/lstm1.py">
       <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="3512" max-vertical-offset="8910">
+          <caret line="248" column="0" selection-start-line="248" selection-start-column="0" selection-end-line="248" selection-end-column="0" />
+          <folding>
+            <element signature="e#41#76#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/lstm/code/imdb.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="1547" max-vertical-offset="2520">
+          <caret line="119" column="0" selection-start-line="119" selection-start-column="0" selection-end-line="119" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/lstm/code/lstm1.py">
+      <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="270" max-vertical-offset="8730">
           <caret line="30" column="0" selection-start-line="30" selection-start-column="0" selection-end-line="30" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#41#76#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -696,7 +783,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="90" max-vertical-offset="5640">
           <caret line="30" column="33" selection-start-line="30" selection-start-column="33" selection-end-line="30" selection-end-column="33" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -884,7 +970,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.26261586" vertical-offset="90" max-vertical-offset="5640">
           <caret line="35" column="26" selection-start-line="35" selection-start-column="26" selection-end-line="35" selection-end-column="26" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -899,14 +984,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="-6.3461537" vertical-offset="0" max-vertical-offset="1755">
           <caret line="19" column="0" selection-start-line="19" selection-start-column="0" selection-end-line="19" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/models/lstm/code/imdb.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="1516" max-vertical-offset="2520">
-          <caret line="120" column="0" selection-start-line="120" selection-start-column="0" selection-end-line="120" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -979,9 +1056,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="420">
           <caret line="18" column="0" selection-start-line="18" selection-start-column="0" selection-end-line="22" selection-end-column="28" />
-          <folding>
-            <element signature="e#182#205#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -989,7 +1063,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.21036585" vertical-offset="318" max-vertical-offset="4740">
           <caret line="36" column="0" selection-start-line="36" selection-start-column="0" selection-end-line="36" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1003,55 +1076,75 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/models/lstm/scode/synapsify_preprocess.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="2511" max-vertical-offset="3600">
-          <caret line="176" column="18" selection-start-line="176" selection-start-column="8" selection-end-line="176" selection-end-column="18" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="2820" max-vertical-offset="3600">
+          <caret line="209" column="8" selection-start-line="209" selection-start-column="8" selection-end-line="209" selection-end-column="21" />
           <folding>
             <element signature="e#469#492#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/models/lstm/params/orig_params.json">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-16.25" vertical-offset="0" max-vertical-offset="480">
-          <caret line="26" column="1" selection-start-line="26" selection-start-column="1" selection-end-line="26" selection-end-column="1" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/models/lstm/scode/load_params.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-8.0" vertical-offset="1502" max-vertical-offset="2280">
-          <caret line="114" column="22" selection-start-line="114" selection-start-column="8" selection-end-line="114" selection-end-column="22" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="480" max-vertical-offset="2280">
+          <caret line="32" column="32" selection-start-line="32" selection-start-column="32" selection-end-line="32" selection-end-column="32" />
           <folding>
             <element signature="e#23#51#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/colearn/test_colearn.py">
+    <entry file="file://$PROJECT_DIR$/models/lstm/code/imdb.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="600">
-          <caret line="32" column="45" selection-start-line="32" selection-start-column="45" selection-end-line="32" selection-end-column="45" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="1547" max-vertical-offset="2520">
+          <caret line="119" column="0" selection-start-line="119" selection-start-column="0" selection-end-line="119" selection-end-column="0" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/lstm/params/orig_params.json">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-1.25" vertical-offset="0" max-vertical-offset="480">
+          <caret line="2" column="17" selection-start-line="2" selection-start-column="17" selection-end-line="2" selection-end-column="17" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/lstm/scode/lstm_utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-8.192307" vertical-offset="1947" max-vertical-offset="3615">
+          <caret line="144" column="0" selection-start-line="144" selection-start-column="0" selection-end-line="144" selection-end-column="0" />
+          <folding>
+            <element signature="e#23#42#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/models/lstm/code/lstm1.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-10.538462" vertical-offset="5291" max-vertical-offset="8730">
-          <caret line="383" column="40" selection-start-line="383" selection-start-column="40" selection-end-line="383" selection-end-column="40" />
-          <folding />
+        <state vertical-scroll-proportion="-153.40909" vertical-offset="0" max-vertical-offset="8910">
+          <caret line="450" column="0" selection-start-line="450" selection-start-column="0" selection-end-line="450" selection-end-column="0" />
+          <folding>
+            <element signature="e#41#76#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/models/lstm/scode/lstm_class.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.33333334" vertical-offset="655" max-vertical-offset="4845">
-          <caret line="53" column="8" selection-start-line="53" selection-start-column="8" selection-end-line="54" selection-end-column="70" />
+        <state vertical-scroll-proportion="-6.181818" vertical-offset="3470" max-vertical-offset="4080">
+          <caret line="254" column="0" selection-start-line="254" selection-start-column="0" selection-end-line="254" selection-end-column="0" />
           <folding>
             <element signature="e#23#42#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/colearn/test_colearn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.8120301" vertical-offset="0" max-vertical-offset="665">
+          <caret line="36" column="0" selection-start-line="36" selection-start-column="0" selection-end-line="36" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
