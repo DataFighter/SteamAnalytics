@@ -1,40 +1,52 @@
 #!/usr/bin/env python
 
-import theano, copy
+import theano, time, copy
 import theano.tensor as tensor
 from theano import config
 import numpy as np
+import cPickle as pkl
+import random
 from collections import OrderedDict
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
-# from lstm_utils import *
 
 
 class LSTM(object):
 
     @classmethod
-    def __init__(self,PD): # PD = Params Data
+    def __init__(self, Object, orig=None): # Object = Params Data & Data Sets
 
-        self.PD = PD
-        self._layers = {'lstm': (self.param_init_lstm, self.lstm_layer)}
-        self.model_options = PD.model_options
-        self._params  = self._init_params(self.model_options)
-        self._tparams = self._init_tparams(self._params)
-        self.model_options = PD.model_options
-        self.optimizer = self.model_options['optimizer']
+        if orig!=None:
+            try:
+                print "Assuming object is LSTM, copying..."
+                self.data = copy.deepcopy(Object.data)
+                self._layers = copy.deepcopy(Object._layers)
+                self.model_options = copy.deepcopy(Object.model_options)
+                self._params  = copy.deepcopy(Object._params)
+                self._tparams = copy.deepcopy(Object._tparams) # I don't know if this will work, do Theano variables need to be recompiled?
+                self.model_options = copy.deepcopy(Object.model_options)
+                self.optimizer = self.model_options['optimizer']
+                orig = 'Copied'
+            except:
+                orig = "NotCopied"
+                print "Couldn't copy LSTM Object, initializing a new object."
 
-    @staticmethod
-    def _p(pp, name):
-        return '%s_%s' % (pp, name)
+        if orig=="NotCopied":
 
-    @staticmethod
-    def numpy_floatX(data):
-        return np.asarray(data, dtype=config.floatX)
+            self.data = copy.deepcopy(Object.data)
+            self._layers = {'lstm': (self.param_init_lstm, self.lstm_layer)}
+            self.model_options = copy.deepcopy(Object.model_options)
+            self._params  = self._init_params(self.model_options)
+            self._tparams = self._init_tparams(self._params)
+            self.optimizer = self.model_options['optimizer']
 
-    @staticmethod
-    def ortho_weight(ndim):
-        W = np.random.randn(ndim, ndim)
-        u, s, v = np.linalg.svd(W)
-        return u.astype(config.floatX)
+        elif orig==None:
+
+            self.data = Object
+            self._layers = {'lstm': (self.param_init_lstm, self.lstm_layer)}
+            self.model_options = Object.model_options
+            self._params  = self._init_params(self.model_options)
+            self._tparams = self._init_tparams(self._params)
+            self.optimizer = self.model_options['optimizer']
 
     @classmethod
     def _init_params(self, options):
@@ -61,6 +73,34 @@ class LSTM(object):
         for kk, pp in params.iteritems():
             tparams[kk] = theano.shared(params[kk], name=kk)
         return tparams
+
+#=======================================================================================================================
+# MODEL BUILDING MODEL BUILDING MODEL BUILDING MODEL BUILDING MODEL BUILDING MODEL BUILDING MODEL BUILDING MODEL BUILDING
+#=======================================================================================================================
+
+    @staticmethod
+    def _p(pp, name):
+        return '%s_%s' % (pp, name)
+
+    @staticmethod
+    def numpy_floatX(data):
+        return np.asarray(data, dtype=config.floatX)
+
+    @staticmethod
+    def ortho_weight(ndim):
+        W = np.random.randn(ndim, ndim)
+        u, s, v = np.linalg.svd(W)
+        return u.astype(config.floatX)
+
+    @staticmethod
+    def dropout_layer( state_before, use_noise, trng):
+        proj = tensor.switch(use_noise,
+                             (state_before *
+                              trng.binomial(state_before.shape,
+                                            p=0.5, n=1,
+                                            dtype=state_before.dtype)),
+                             state_before * 0.5)
+        return proj
 
     @classmethod
     def lstm_layer(self, tparams, state_below, options, prefix='lstm', mask=None):
@@ -116,16 +156,6 @@ class LSTM(object):
     def get_layer(self, name):
         fns = self._layers[name]
         return fns
-
-    @staticmethod
-    def dropout_layer( state_before, use_noise, trng):
-        proj = tensor.switch(use_noise,
-                             (state_before *
-                              trng.binomial(state_before.shape,
-                                            p=0.5, n=1,
-                                            dtype=state_before.dtype)),
-                             state_before * 0.5)
-        return proj
 
     @classmethod
     def param_init_lstm(self, options, params, prefix='lstm'):
@@ -229,7 +259,7 @@ class LSTM(object):
             optimizer = self.adadelta
 
             # use_noise is for dropout
-            (use_noise, x, mask, y, f_pred_prob, f_pred, cost) = self._build_model(self._tparams, self.model_options)
+            (use_noise, x, mask, y, self.f_pred_prob, self.f_pred, cost) = self._build_model(self._tparams, self.model_options)
 
             print 'Done. Setting up Optimization Function'
 
@@ -240,22 +270,260 @@ class LSTM(object):
                 weight_decay += (self._tparams['U'] ** 2).sum()
                 weight_decay *= decay_c
                 cost += weight_decay
+                print "cost updated with a weight decay"
 
             grads = tensor.grad(cost, wrt=self._tparams.values())
+            print "gradients set up"
 
             lr = tensor.scalar(name='lr')
             self.f_grad_shared, self.f_update = optimizer(lr, self._tparams, grads, x, mask, y, cost)
+            print "Optimization functions created"
 
-            f_cost = theano.function([x, mask, y], cost, name='f_cost')
-            f_grad = theano.function([x, mask, y], grads, name='f_grad')
+            self.f_cost = theano.function([x, mask, y], cost, name='f_cost')
+            print "Cost function created"
+            self.f_grad = theano.function([x, mask, y], grads, name='f_grad')
+            print "Gradient function created"
         else:
             print "We do not have any other optimizers, stop being difficult and choose one we already have ready."
 
+        # Save variables for us in training section
+        self._use_noise = use_noise
         print 'Model Ready!'
         return self
 
+#=======================================================================================================================
+# TRAINING TRAINING TRAINING TRAINING TRAINING TRAINING TRAINING TRAINING TRAINING TRAINING TRAINING TRAINING TRAINING
+#=======================================================================================================================
+
+    @staticmethod
+    def get_minibatches_idx(n, minibatch_size, shuffle=False):
+        """
+        Used to shuffle the dataset at each iteration.
+        """
+
+        idx_list = np.arange(n, dtype="int32")
+
+        if shuffle:
+            random.shuffle(idx_list)
+
+        minibatches = []
+        minibatch_start = 0
+        for i in range(n // minibatch_size):
+            minibatches.append(idx_list[minibatch_start:
+                                        minibatch_start + minibatch_size])
+            minibatch_start += minibatch_size
+
+        if (minibatch_start != n):
+            # Make a minibatch out of what is left
+            minibatches.append(idx_list[minibatch_start:])
+
+        return zip(range(len(minibatches)), minibatches)
+
+    @staticmethod
+    def prepare_data(seqs, labels, maxlen=None):	# maxlen means how many
+        """Create the matrices from the datasets.
+
+        This pad each sequence to the same length: the length of the
+        longuest sequence or maxlen.
+
+        if maxlen is set, we will cut all sequence to this maximum
+        lenght.
+
+        """
+        # x: a list of sentences
+        lengths = [len(s) for s in seqs]	### A list contains each of the comments length
+
+        if maxlen is not None:
+            new_seqs = []
+            new_labels = []
+            new_lengths = []
+            for l, s, y in zip(lengths, seqs, labels):
+                if l < maxlen:
+                    new_seqs.append(s)
+                    new_labels.append(y)
+                    new_lengths.append(l)
+            lengths = new_lengths
+            labels = new_labels
+            seqs = new_seqs			### Filter out the comments whose length exceeds the maxlen
+
+            if len(lengths) < 1:
+                return None, None, None
+
+        n_samples = len(seqs)
+        maxlen = np.max(lengths)
+
+        x = np.zeros((maxlen, n_samples)).astype('int64')
+        x_mask = np.zeros((maxlen, n_samples)).astype('float32')
+        for idx, s in enumerate(seqs):
+            x[:lengths[idx], idx] = s
+            x_mask[:lengths[idx], idx] = 1.
+
+        return x, x_mask, labels	### x is the matrix with dimension of maxlen * n_samples
+
+    @staticmethod
+    def unzip(zipped):
+        """
+        When we pickle the model. Needed for the GPU stuff.
+        """
+        new_params = OrderedDict()
+        for kk, vv in zipped.iteritems():
+            new_params[kk] = vv.get_value()
+        return new_params
+
+    #______________________________________________________
+    # CLASSMETHODS CLASSMETHODS CLASSMETHODS CLASSMETHODS
+
+    @classmethod
+    def pred_error(self, f_pred, prepare_data, data, iterator, verbose=False):
+        """
+        Just compute the error
+        f_pred: Theano fct computing the prediction
+        prepare_data: usual prepare_data for that dataset.
+        """
+        valid_err = 0
+        for _, valid_index in iterator:
+            x, mask, y = prepare_data([data[0][t] for t in valid_index],
+                                      np.array(data[1])[valid_index],
+                                      maxlen=None)
+            preds = f_pred(x, mask)
+            targets = np.array(data[1])[valid_index]
+            valid_err += (preds == targets).sum()
+        valid_err = 1. - self.numpy_floatX(valid_err) / len(data[0])
+
+        return valid_err
+
+    @classmethod
+    def zipp(self, params):
+        """
+        When we reload the model. Needed for the GPU stuff.
+        """
+        for kk, vv in params.iteritems():
+            self._tparams[kk].set_value(vv)
+
     @classmethod
     def train_model(self):
+
+        kf_valid = self.get_minibatches_idx( len(self.data.valid_set[0]), self.model_options['valid_batch_size'])
+        kf_test  = self.get_minibatches_idx( len(self.data.test_set[0]) , self.model_options['valid_batch_size'])
+
+        print "%d train examples" % len(self.data.train_set[0])
+        print "%d valid examples" % len(self.data.valid_set[0])
+        print "%d test examples" % len(self.data.test_set[0])
+        history_errs = []
+        best_p = None
+        bad_count = 0
+
+        if self.model_options['validFreq'] == -1:
+            self.model_options['validFreq'] = len(self.data.train_set[0]) / self.model_options['batch_size']
+        if self.model_options['saveFreq'] == -1:
+            self.model_options['saveFreq'] = len(self.data.train_set[0]) / self.model_options['batch_size']
+
+        uidx = 0  # the number of update done
+        estop = False  # early stop
+        start_time = time.clock()
+        try:
+            for eidx in xrange(self.model_options['max_epochs']):
+                n_samples = 0
+
+                # Get new shuffled index for the training set.
+                kf = self.get_minibatches_idx(len(self.data.train_set[0]), self.model_options['batch_size'], shuffle=True)
+
+                for _, train_index in kf:
+                    uidx += 1
+                    self._use_noise.set_value(1.)
+
+                    # Select the random examples for this minibatch
+                    y = [self.data.train_set[1][t] for t in train_index]
+                    x = [self.data.train_set[0][t]for t in train_index]
+
+                    # Get the data in numpy.ndarray format
+                    # This swap the axis!
+                    # Return something of shape (minibatch maxlen, n samples)
+                    x, mask, y = self.prepare_data(x, y)
+                    n_samples += x.shape[1]
+
+                    cost = self.f_grad_shared(x, mask, y)
+                    self.f_update(self.model_options['lrate'])
+
+                    if np.isnan(cost) or np.isinf(cost):
+                        print 'NaN detected'
+                        return 1., 1., 1.
+
+                    if np.mod(uidx, self.model_options['dispFreq']) == 0:
+                        print 'Epoch ', eidx, 'Update ', uidx, 'Cost ', cost
+
+                    if self.model_options['saveto'] and np.mod(uidx, self.model_options['saveFreq']) == 0:
+                        print 'Saving...',
+
+                        if best_p is not None:
+                            params = best_p
+                        else:
+                            params = self.unzip(self._tparams)
+                        np.savez(self.model_options['saveto'], history_errs=history_errs, **params)
+                        pkl.dump(self.model_options, open('%s.pkl' % self.model_options['saveto'], 'wb'), -1)
+                        print 'Done'
+
+                    if np.mod(uidx, self.model_options['validFreq']) == 0:
+                        self._use_noise.set_value(0.)
+                        train_err = self.pred_error(self.f_pred, self.prepare_data, self.data.train_set, kf)
+                        valid_err = self.pred_error(self.f_pred, self.prepare_data, self.data.valid_set, kf_valid)
+                        test_err = self.pred_error(self.f_pred, self.prepare_data, self.data.test_set, kf_test)
+
+                        history_errs.append([valid_err, test_err])
+
+                        if (uidx == 0 or
+                            valid_err <= np.array(history_errs)[:,0].min()):
+
+                            best_p = self.unzip(self._tparams)
+                            bad_counter = 0
+
+                        print ('Train ', train_err,
+                               'Valid ', valid_err,
+                               'Test ', test_err)
+
+                        if (len(history_errs) > self.model_options['patience'] and
+                            valid_err >= np.array(history_errs)[:-self.model_options['patience'],0].min()):
+                            bad_counter += 1
+                            if bad_counter > self.model_options['patience']:
+                                print 'Early Stop!'
+                                estop = True
+                                break
+
+                print 'Seen %d samples' % n_samples
+
+                if estop:
+                    break
+
+        except KeyboardInterrupt:
+            print "Training interupted"
+
+        end_time = time.clock()
+        if best_p is not None:
+            self.zipp(best_p, self._tparams)
+        else:
+            best_p = self.unzip(self._tparams)
+
+        self._use_noise.set_value(0.)
+        kf_train_sorted = self.get_minibatches_idx(len(self.data.train_set[0]), self.model_options['batch_size'])
+        train_err = self.pred_error(self.f_pred, self.prepare_data, self.data.train_set, kf_train_sorted)
+        valid_err = self.pred_error(self.f_pred, self.prepare_data, self.data.valid_set, kf_valid)
+        test_err = self.pred_error(self.f_pred, self.prepare_data, self.data.test_set, kf_test)
+
+        print ('Train ', train_err, 'Valid ', valid_err, 'Test ', test_err)
+
+        if self.model_options['saveto']:
+            np.savez(self.model_options['saveto'], train_err=train_err,
+                        valid_err=valid_err, test_err=test_err,
+                        history_errs=history_errs, **best_p)
+        print 'The code run for %d epochs, with %f sec/epochs' % (
+            (eidx + 1), (end_time - start_time) / (1. * (eidx + 1)))
+        print >> sys.stderr, ('Training took %.1fs' %
+                              (end_time - start_time))
+
+        # return train_err, valid_err, test_err
+        self.train_err = train_err
+        self.valid_err = valid_err
+        self.test_err = test_err
         return self
 
     @classmethod

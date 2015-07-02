@@ -20,8 +20,6 @@ if lstm_dir not in sys.path:
 from load_params import Load_LSTM_Params
 from lstm_class import LSTM as lstm
 
-from lstm_utils import *
-
 param_file = 'orig_params.json'
 data_file  = ''
 
@@ -31,9 +29,8 @@ PD.update_options()
 print PD.model_options
 # Here I can pickle the PD object for use later. Good if the data is HUGE
 
-# build_n_run_lstm(PD.model_options)
-
 LSTM = lstm(PD)
-LSTM.build_model().train_model().test_model()
+LSTM.build_model()
+LSTM.train_model().test_model()
 
 # IN.gen_sent_tvt(0,5,100,100)
