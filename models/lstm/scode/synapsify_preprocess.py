@@ -99,12 +99,13 @@ class Preprocess():
         return seqs
 
     @classmethod
-    def _get_sentiment_indices(self,rows, sentcol):
+    def _get_sentiment_indices(self,rows, sentcol, init):
 
         # sx = np.where(np.in1d(sent_flags, row[sentcol]))[0]
         XX = {}
-        XX['pos'] = [r for r,row in enumerate(rows) if ((row[sentcol]=='Positive') | (row[sentcol]=='Neutral'))]
-        XX['neg'] = [r for r,row in enumerate(rows) if ((row[sentcol]=='Negative') | (row[sentcol]=='Mixed'))]
+        len_init = len(init) # Ruofan fix
+        XX['pos'] = [r + len_init for r,row in enumerate(rows) if ((row[sentcol]=='Positive') | (row[sentcol]=='Neutral'))]
+        XX['neg'] = [r + len_init for r,row in enumerate(rows) if ((row[sentcol]=='Negative') | (row[sentcol]=='Mixed'))]
         return XX
 
     @classmethod
@@ -133,7 +134,7 @@ class Preprocess():
         """
 
         # I just want to get this working and move on
-        initial = len(forbidden)-1
+        initial = len(forbidden) # Ruofan fix
         XX = range(initial,initial+num_indices)
         if XX[-1]>len_set: print "Test/Train set indices are out of bounds!!"
         return XX
@@ -190,8 +191,8 @@ class Preprocess():
         # max_sentence_length(self.test_x_sets) # IS THERE A MAXIMUM LENGTH???????
 
         # Grab the indices for the Core sentiment
-        trXX = self._get_sentiment_indices([rows[r] for r in self._train_xx], self._label_col)
-        teXX = self._get_sentiment_indices([rows[r] for r in self._test_xx], self._label_col)
+        trXX = self._get_sentiment_indices([rows[r] for r in self._train_xx], self._label_col, [])
+        teXX = self._get_sentiment_indices([rows[r] for r in self._test_xx], self._label_col, self._train_xx)
 
         # Munge training and test sets for the classes provided
         train = self._munge_class_freqs(sentences,[trXX['neg'],trXX['pos']])

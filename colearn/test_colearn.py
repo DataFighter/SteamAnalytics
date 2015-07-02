@@ -20,7 +20,8 @@ if lstm_dir not in sys.path:
 from load_params import Load_LSTM_Params
 from lstm_class import LSTM as lstm
 
-param_file = 'orig_params.json'
+# param_file = 'orig_params.json'
+param_file = 'ruofan_params.json'
 data_file  = ''
 
 PD = Load_LSTM_Params(lstm_params_dir, param_file)
