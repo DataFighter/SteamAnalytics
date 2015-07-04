@@ -2,6 +2,7 @@
 
 import theano, time, copy
 import theano.tensor as tensor
+import uuid
 from theano import config
 import numpy as np
 import cPickle as pkl
@@ -13,40 +14,41 @@ from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 class LSTM(object):
 
     @classmethod
-    def __init__(self, Object, orig=None): # Object = Params Data & Data Sets
+    def __init__(self, Object=None, orig=None): # Object = Params Data & Data Sets
 
-        if orig!=None:
-            try:
-                print "Assuming object is LSTM, copying..."
+        if Object!=None: # Create empty object.
+            if orig!=None:
+                try:
+                    print "Assuming object is LSTM, copying..."
+                    self.data = copy.deepcopy(Object.data)
+                    self._layers = copy.deepcopy(Object._layers)
+                    self.model_options = copy.deepcopy(Object.model_options)
+                    self._params  = copy.deepcopy(Object._params)
+                    self._tparams = copy.deepcopy(Object._tparams) # I don't know if this will work, do Theano variables need to be recompiled?
+                    self.model_options = copy.deepcopy(Object.model_options)
+                    self.optimizer = self.model_options['optimizer']
+                    orig = 'Copied'
+                except:
+                    orig = "NotCopied"
+                    print "Couldn't copy LSTM Object, initializing a new object."
+
+            if orig=="NotCopied":
+
                 self.data = copy.deepcopy(Object.data)
-                self._layers = copy.deepcopy(Object._layers)
+                self._layers = {'lstm': (self.param_init_lstm, self.lstm_layer)}
                 self.model_options = copy.deepcopy(Object.model_options)
-                self._params  = copy.deepcopy(Object._params)
-                self._tparams = copy.deepcopy(Object._tparams) # I don't know if this will work, do Theano variables need to be recompiled?
-                self.model_options = copy.deepcopy(Object.model_options)
+                self._params  = self._init_params(self.model_options)
+                self._tparams = self._init_tparams(self._params)
                 self.optimizer = self.model_options['optimizer']
-                orig = 'Copied'
-            except:
-                orig = "NotCopied"
-                print "Couldn't copy LSTM Object, initializing a new object."
 
-        if orig=="NotCopied":
+            elif orig==None:
 
-            self.data = copy.deepcopy(Object.data)
-            self._layers = {'lstm': (self.param_init_lstm, self.lstm_layer)}
-            self.model_options = copy.deepcopy(Object.model_options)
-            self._params  = self._init_params(self.model_options)
-            self._tparams = self._init_tparams(self._params)
-            self.optimizer = self.model_options['optimizer']
-
-        elif orig==None:
-
-            self.data = Object
-            self._layers = {'lstm': (self.param_init_lstm, self.lstm_layer)}
-            self.model_options = Object.model_options
-            self._params  = self._init_params(self.model_options)
-            self._tparams = self._init_tparams(self._params)
-            self.optimizer = self.model_options['optimizer']
+                self.data = Object
+                self._layers = {'lstm': (self.param_init_lstm, self.lstm_layer)}
+                self.model_options = Object.model_options
+                self._params  = self._init_params(self.model_options)
+                self._tparams = self._init_tparams(self._params)
+                self.optimizer = self.model_options['optimizer']
 
     @classmethod
     def _init_params(self, options):
@@ -529,6 +531,36 @@ class LSTM(object):
     @classmethod
     def test_model(self):
         return self
+
+    @classmethod
+    def pickle_model(self, filename="./IdeaNet.pkl"):
+        '''Save the IdeaNet for future use
+            filename: string giving the path and name of the file to save the IdeaNet to
+        '''
+        id = str(uuid.uuid1())
+        filename += '.' + id
+        f = file(filename,'wb')
+        pkl.dump(self,f,protocol=pkl.HIGHEST_PROTOCOL)
+        f.close()
+
+    @classmethod
+    def load_pickle(self,filename):
+        f = file(filename,'rb')
+        IdeaNet = pkl.load(f)
+        f.close()
+        self.__init__(IdeaNet, orig='New')
+
+    @classmethod
+    def zip_model(self, filename="./IdeaNet.zip"):
+        id = str(uuid.uuid1())
+        filename += '.' + id
+        f = open(filename,'w')
+        theano.misc.pkl_utils.dump(self,f)
+
+    @classmethod
+    def load_zip(self,filename):
+        IdeaNet = np.load(filename)
+        self.__init__(IdeaNet['self'],orig='New')
 
 # if __name__ == '__main__':
 #     filename = sys.argv[0]
