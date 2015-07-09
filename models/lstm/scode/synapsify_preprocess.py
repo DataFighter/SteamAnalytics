@@ -33,7 +33,6 @@ tokenizer_cmd = [tokenizer_dir_file, '-l', 'en', '-q', '-']
 
 class Preprocess():
 
-    @classmethod
     def __init__(self, model_options):
         self._data_directory  = os.path.realpath(os.path.abspath(os.path.join(this_dir,model_options['data_directory'])))
         self._data_file  = model_options['data_file']
