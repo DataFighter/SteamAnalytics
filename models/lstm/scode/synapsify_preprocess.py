@@ -86,6 +86,12 @@ class Preprocess():
 
         return worddict
 
+    # @classmethod
+    # def _format_sentence_freq(self,sentence):
+    #     words = sentence.strip().lower().split()
+    #     seq = [self._DICTIONARY[w] if w in self._DICTIONARY else 1 for w in words]
+    #     return seq
+
     @classmethod
     def _format_sentence_frequencies(self,sentences):
 
@@ -93,6 +99,7 @@ class Preprocess():
 
         seqs = [None] * len(sentences)
         for idx, ss in enumerate(sentences):
+            # seqs[idx] = self._format_sentence_freq(ss)
             words = ss.strip().lower().split()
             seqs[idx] = [self._DICTIONARY[w] if w in self._DICTIONARY else 1 for w in words]
 

@@ -4,15 +4,16 @@ import ast, sys, os, inspect
 import numpy as np
 
 this_dir = this_dir = os.path.realpath( os.path.abspath( os.path.split( inspect.getfile( inspect.currentframe() ))[0]))
-if this_dir not in sys.path:
-    sys.path.insert(0, this_dir)
+params_directory = os.path.realpath(os.path.abspath(os.path.join(this_dir,"../params")))
+if this_dir not in sys.path: sys.path.insert(0, this_dir)
+if params_directory not in sys.path: sys.path.insert(0, params_directory)
 
 from synapsify_preprocess import Preprocess
 
 class Load_LSTM_Params(Preprocess):
 
     @classmethod
-    def __init__(self, params_dir, param_file):
+    def __init__(self, params_dir=params_directory, param_file='ruofan_params.json'):
         self._params_dir = params_dir
         self._param_file = param_file
         self.model_options = self.JSON_minify(os.path.join(self._params_dir, self._param_file))

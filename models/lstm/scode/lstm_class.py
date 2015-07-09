@@ -10,17 +10,44 @@ import random
 from collections import OrderedDict
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
+import os, sys, inspect
+this_dir = this_dir = os.path.realpath( os.path.abspath( os.path.split( inspect.getfile( inspect.currentframe() ))[0]))
+params_directory = os.path.realpath(os.path.abspath(os.path.join(this_dir,"../params")))
+if this_dir not in sys.path: sys.path.insert(0, this_dir)
+if params_directory not in sys.path: sys.path.insert(0, params_directory)
 
-class LSTM(object):
+from load_params import Load_LSTM_Params
+
+class LSTM(Load_LSTM_Params):
 
     @classmethod
-    def __init__(self, Object=None, orig=None): # Object = Params Data & Data Sets
+    def __init__(self, Object=None, orig=None, params_dir=None, param_file=None): # Object = Params Data & Data Sets
+    # def __init__(self, Object=None, orig=None): # Object = Params Data & Data Sets
 
-        if Object!=None: # Create empty object.
+        if Object==None:
+            if params_dir==None:
+                Load_LSTM_Params.__init__()
+            else:
+                Load_LSTM_Params.__init__(params_dir, param_file)
+
+            self._layers = {'lstm': (self.param_init_lstm, self.lstm_layer)}
+
+
+        elif Object!=None: # Is it LSTM or Parameters Object?
+
+            # Params & Data variables
+            self._params_dir  = copy.deepcopy(Object._params_dir)
+            self._params_file = copy.deepcopy(Object._params_file)
+            self.train_set = copy.deepcopy(Object.train_set)
+            self.valid_set = copy.deepcopy(Object.valid_set)
+            self.test_set  = copy.deepcopy(Object.test_set)
+            self._DICTIONARY = copy.deepcopy(Object._DICTIONARY)
+
             if orig!=None:
                 try:
                     print "Assuming object is LSTM, copying..."
-                    self.data = copy.deepcopy(Object.data)
+
+                    # LSTM variables
                     self._layers = copy.deepcopy(Object._layers)
                     self.model_options = copy.deepcopy(Object.model_options)
                     self._params  = copy.deepcopy(Object._params)
@@ -32,23 +59,23 @@ class LSTM(object):
                     orig = "NotCopied"
                     print "Couldn't copy LSTM Object, initializing a new object."
 
-            if orig=="NotCopied":
+            if orig=="NotCopied": # It's a Parameters object, not LSTM.
 
-                self.data = copy.deepcopy(Object.data)
+                # LSTM variables
                 self._layers = {'lstm': (self.param_init_lstm, self.lstm_layer)}
                 self.model_options = copy.deepcopy(Object.model_options)
                 self._params  = self._init_params(self.model_options)
                 self._tparams = self._init_tparams(self._params)
                 self.optimizer = self.model_options['optimizer']
 
-            elif orig==None:
-
-                self.data = Object
+            # Basic initialization assumes Object is Load_LSTM_Params class
+            if orig==None:
                 self._layers = {'lstm': (self.param_init_lstm, self.lstm_layer)}
                 self.model_options = Object.model_options
                 self._params  = self._init_params(self.model_options)
                 self._tparams = self._init_tparams(self._params)
                 self.optimizer = self.model_options['optimizer']
+
 
     @classmethod
     def _init_params(self, options):
@@ -256,6 +283,19 @@ class LSTM(object):
 
         print 'Building model'
 
+        try:
+            self.update_options()
+            self._params  = self._init_params(self.model_options)
+            self._tparams = self._init_tparams(self._params)
+            self.optimizer = self.model_options['optimizer']
+        except:
+            print "Need to preprocess the data first"
+            self.preprocess()
+            self.update_options()
+            self._params  = self._init_params(self.model_options)
+            self._tparams = self._init_tparams(self._params)
+            self.optimizer = self.model_options['optimizer']
+
         if self.optimizer=='adadelta':
 
             optimizer = self.adadelta
@@ -322,7 +362,7 @@ class LSTM(object):
         return zip(range(len(minibatches)), minibatches)
 
     @staticmethod
-    def prepare_data(seqs, labels, maxlen=None):	# maxlen means how many
+    def _prepare_data(seqs, labels, maxlen=None):	# maxlen means how many
         """Create the matrices from the datasets.
 
         This pad each sequence to the same length: the length of the
@@ -375,19 +415,49 @@ class LSTM(object):
     #______________________________________________________
     # CLASSMETHODS CLASSMETHODS CLASSMETHODS CLASSMETHODS
 
+    # @classmethod
+    # def _classify_one(self, data, valid_index):
+    #     x, mask, y = self._prepare_data([data[0][t] for t in valid_index],
+    #                                      np.array(data[1])[valid_index],
+    #                                      maxlen=None)
+    #     preds = self.f_pred(x, mask)
+    #     return preds
+
     @classmethod
-    def pred_error(self, f_pred, prepare_data, data, iterator, verbose=False):
+    def classify(self, sentences):
+        """This function uses f_pred to classify the user provided text.
+        To accomplish this, the vector must be reorganized relative to the input DICTIONARY
+        sentences is a list of strings
+        """
+
+        data = self._format_sentence_frequencies(sentences)
+        preds = []
+        len_data = len(data)
+        iterator = self.get_minibatches_idx(len_data, self.model_options['batch_size'], shuffle=True)
+        for _, valid_index in iterator:
+            # this_pred = self._classify_one(data, valid_index)
+            x, mask, y = self._prepare_data([data[t] for t in valid_index],
+                                      np.array([1]*len_data),
+                                      maxlen=None)
+            this_pred = self.f_pred(x, mask)
+            preds.append(this_pred)
+
+        return preds
+
+    @classmethod
+    def pred_error(self, data, iterator, verbose=False):
         """
         Just compute the error
         f_pred: Theano fct computing the prediction
-        prepare_data: usual prepare_data for that dataset.
+        _prepare_data: usual _prepare_data for that dataset.
         """
         valid_err = 0
         for _, valid_index in iterator:
-            x, mask, y = prepare_data([data[0][t] for t in valid_index],
+            x, mask, y = self._prepare_data([data[0][t] for t in valid_index],
                                       np.array(data[1])[valid_index],
                                       maxlen=None)
-            preds = f_pred(x, mask)
+            preds = self.f_pred(x, mask)
+            # preds = self._classify_one(data, valid_index)
             targets = np.array(data[1])[valid_index]
             valid_err += (preds == targets).sum()
         valid_err = 1. - self.numpy_floatX(valid_err) / len(data[0])
@@ -403,45 +473,48 @@ class LSTM(object):
             self._tparams[kk].set_value(vv)
 
     @classmethod
-    def train_model(self):
+    def train_model(self, max_epochs=None):
 
-        kf_valid = self.get_minibatches_idx( len(self.data.valid_set[0]), self.model_options['valid_batch_size'])
-        kf_test  = self.get_minibatches_idx( len(self.data.test_set[0]) , self.model_options['valid_batch_size'])
+        if max_epochs==None:
+            max_epochs = self.model_options['max_epochs']
 
-        print "%d train examples" % len(self.data.train_set[0])
-        print "%d valid examples" % len(self.data.valid_set[0])
-        print "%d test examples" % len(self.data.test_set[0])
+        kf_valid = self.get_minibatches_idx( len(self.valid_set[0]), self.model_options['valid_batch_size'])
+        kf_test  = self.get_minibatches_idx( len(self.test_set[0]) , self.model_options['valid_batch_size'])
+
+        print "%d train examples" % len(self.train_set[0])
+        print "%d valid examples" % len(self.valid_set[0])
+        print "%d test examples" % len(self.test_set[0])
         history_errs = []
         best_p = None
         bad_count = 0
 
         if self.model_options['validFreq'] == -1:
-            self.model_options['validFreq'] = len(self.data.train_set[0]) / self.model_options['batch_size']
+            self.model_options['validFreq'] = len(self.train_set[0]) / self.model_options['batch_size']
         if self.model_options['saveFreq'] == -1:
-            self.model_options['saveFreq'] = len(self.data.train_set[0]) / self.model_options['batch_size']
+            self.model_options['saveFreq'] = len(self.train_set[0]) / self.model_options['batch_size']
 
         uidx = 0  # the number of update done
         estop = False  # early stop
         start_time = time.clock()
         try:
-            for eidx in xrange(self.model_options['max_epochs']):
+            for eidx in xrange(max_epochs):
                 n_samples = 0
 
                 # Get new shuffled index for the training set.
-                kf = self.get_minibatches_idx(len(self.data.train_set[0]), self.model_options['batch_size'], shuffle=True)
+                kf = self.get_minibatches_idx(len(self.train_set[0]), self.model_options['batch_size'], shuffle=True)
 
                 for _, train_index in kf:
                     uidx += 1
                     self._use_noise.set_value(1.)
 
                     # Select the random examples for this minibatch
-                    y = [self.data.train_set[1][t] for t in train_index]
-                    x = [self.data.train_set[0][t]for t in train_index]
+                    y = [self.train_set[1][t] for t in train_index]
+                    x = [self.train_set[0][t]for t in train_index]
 
                     # Get the data in numpy.ndarray format
                     # This swap the axis!
                     # Return something of shape (minibatch maxlen, n samples)
-                    x, mask, y = self.prepare_data(x, y)
+                    x, mask, y = self._prepare_data(x, y)
                     n_samples += x.shape[1]
 
                     cost = self.f_grad_shared(x, mask, y)
@@ -467,9 +540,9 @@ class LSTM(object):
 
                     if np.mod(uidx, self.model_options['validFreq']) == 0:
                         self._use_noise.set_value(0.)
-                        train_err = self.pred_error(self.f_pred, self.prepare_data, self.data.train_set, kf)
-                        valid_err = self.pred_error(self.f_pred, self.prepare_data, self.data.valid_set, kf_valid)
-                        test_err = self.pred_error(self.f_pred, self.prepare_data, self.data.test_set, kf_test)
+                        train_err = self.pred_error( self.train_set, kf)
+                        valid_err = self.pred_error( self.valid_set, kf_valid)
+                        test_err  = self.pred_error( self.test_set,  kf_test)
 
                         history_errs.append([valid_err, test_err])
 
@@ -501,15 +574,15 @@ class LSTM(object):
 
         end_time = time.clock()
         if best_p is not None:
-            self.zipp(best_p, self._tparams)
+            self.zipp(best_p)
         else:
             best_p = self.unzip(self._tparams)
 
         self._use_noise.set_value(0.)
-        kf_train_sorted = self.get_minibatches_idx(len(self.data.train_set[0]), self.model_options['batch_size'])
-        train_err = self.pred_error(self.f_pred, self.prepare_data, self.data.train_set, kf_train_sorted)
-        valid_err = self.pred_error(self.f_pred, self.prepare_data, self.data.valid_set, kf_valid)
-        test_err = self.pred_error(self.f_pred, self.prepare_data, self.data.test_set, kf_test)
+        kf_train_sorted = self.get_minibatches_idx(len(self.train_set[0]), self.model_options['batch_size'])
+        train_err = self.pred_error( self.train_set, kf_train_sorted)
+        valid_err = self.pred_error( self.valid_set, kf_valid)
+        test_err  = self.pred_error( self.test_set,  kf_test)
 
         print ('Train ', train_err, 'Valid ', valid_err, 'Test ', test_err)
 
