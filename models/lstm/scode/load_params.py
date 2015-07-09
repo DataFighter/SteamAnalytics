@@ -12,12 +12,11 @@ from synapsify_preprocess import Preprocess
 
 class Load_LSTM_Params(Preprocess):
 
-    @classmethod
     def __init__(self, params_dir=params_directory, param_file='ruofan_params.json'):
         self._params_dir = params_dir
         self._param_file = param_file
         self.model_options = self.JSON_minify(os.path.join(self._params_dir, self._param_file))
-        Preprocess.__init__(self.model_options)
+        Preprocess.__init__(self, self.model_options)
 
     @classmethod
     def JSON_minify(self, filename): # assumes it's in this directory

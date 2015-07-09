@@ -20,15 +20,14 @@ from load_params import Load_LSTM_Params
 
 class LSTM(Load_LSTM_Params):
 
-    @classmethod
     def __init__(self, Object=None, orig=None, params_dir=None, param_file=None): # Object = Params Data & Data Sets
     # def __init__(self, Object=None, orig=None): # Object = Params Data & Data Sets
 
         if Object==None:
             if params_dir==None:
-                Load_LSTM_Params.__init__()
+                Load_LSTM_Params.__init__(self)
             else:
-                Load_LSTM_Params.__init__(params_dir, param_file)
+                Load_LSTM_Params.__init__(self, params_dir, param_file)
 
             self._layers = {'lstm': (self.param_init_lstm, self.lstm_layer)}
 
