@@ -20,6 +20,7 @@
   "reload_model":"",
   "text_col":0,
   "label_col":5,
+  "train_max":0.5,
   "train_size":1524,
   "test_size":1533,
   "data_directory":"../data/test",
