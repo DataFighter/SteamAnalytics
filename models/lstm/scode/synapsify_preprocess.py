@@ -33,13 +33,15 @@ tokenizer_cmd = [tokenizer_dir_file, '-l', 'en', '-q', '-']
 
 class Preprocess():
 
-    def __init__(self, model_options):
+    def __init__(self, model_options, data_file=None, text_col=None, label_col=None, train_size=None, test_size=None):
         self._data_directory  = os.path.realpath(os.path.abspath(os.path.join(this_dir,model_options['data_directory'])))
-        self._data_file  = model_options['data_file']
-        self._text_col   = model_options['text_col']
-        self._label_col  = model_options['label_col']
-        self._train_size = model_options['train_size']
-        self._test_size  = model_options['test_size']
+
+        if data_file==None:  self._data_file  = model_options['data_file'];  else: self._data_file = data_file;
+        if text_col==None:   self._text_col   = model_options['text_col'];   else: self._text_col = text_col;
+        if label_col==None:  self._label_col  = model_options['label_col'];  else: self._label_col = label_col;
+        if train_size==None: self._train_size = model_options['train_size']; else: self._train_size = train_size;
+        if test_size==None:  self._test_size  = model_options['test_size'];  else: self._test_size = test_size;
+
         self._n_words    = model_options['n_words']
         self._model_options = model_options #JSON_minify(os.path.join(directory,filename))
         self._DICTIONARY = []
