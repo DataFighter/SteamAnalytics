@@ -19,7 +19,7 @@ import numpy as np
 
 # If IdeaNets are treated as a module, this addition should not be necessary.
 this_dir = os.path.split(inspect.getfile( inspect.currentframe() ))[0]
-cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(this_dir,"../../../Synapsify")))
+cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(this_dir,"../../../../Synapsify")))
 if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 
