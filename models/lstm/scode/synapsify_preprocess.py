@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 This file is designed to ingest Synapsify standard tagged data sets and convert them to LSTM input format
 

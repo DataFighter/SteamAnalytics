@@ -20,6 +20,34 @@ from load_params import Load_LSTM_Params
 
 class LSTM(Load_LSTM_Params):
 
+# params = {"dim_proj":128,
+#   "patience":10,
+#   "max_epochs":5000,
+#   "dispFreq":10,
+#   "decay_c":0.,
+#   "lrate":0.0001,
+#   "n_words":10000,
+#   "optimizer":"adadelta",
+#   "encoder":"lstm",
+#   "saveto":"lstm_model.npz",
+#   "validFreq":370,
+#   "saveFreq":1110,
+#   "maxlen":100,
+#   "batch_size":16,
+#   "valid_batch_size":64,
+#   "valid_portion":0.05,
+#   "dataset":"imdb",
+#   "noise_std":0.,
+#   "use_dropout":True,
+#   "reload_model":"",
+#   "text_col":0,
+#   "label_col":5,
+#   "train_max":0.5,
+#   "train_size":1524,
+#   "test_size":1533,
+#   "data_directory":"../data/test",
+#   "data_file":"Annotated_Comments_for_Always_Discreet_1.csv"}
+
     def __init__(self, Object=None, orig=None, params_dir=None, param_file=None): # Object = Params Data & Data Sets
     # def __init__(self, Object=None, orig=None): # Object = Params Data & Data Sets
 
@@ -262,6 +290,7 @@ class LSTM(Load_LSTM_Params):
         proj = self.get_layer(options['encoder'])[1](tparams, emb, options,
                                                 prefix=options['encoder'],
                                                 mask=mask)
+        ### Average the results of the layer----------------------------------------
         if options['encoder'] == 'lstm':
             proj = (proj * mask[:, :, None]).sum(axis=0)
             proj = proj / mask.sum(axis=0)[:, None]
