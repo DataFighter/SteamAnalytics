@@ -11,10 +11,16 @@ from pyspark import SparkConf, SparkContext
 import os, sys, inspect
 import os.path.join as opj
 import uuid
+import ast
+import ujson as json
 
 this_path = os.path.abspath(os.path.dirname(__file__))
 
 class INSpark():
+
+    default_params = {
+        "Spark_instances":"train_size"
+    }
 
     def __init__(self, app_name=None, **kwargs):
         if app_name==None:
@@ -22,16 +28,12 @@ class INSpark():
         else:
             uid = app_name
 
-        user_params = {}
-        for key in kwargs:
-            user_params[key] = kwargs[key]
-
         self.app = SparkConf().setAppName(uid)
 
         return self
 
     @classmethod
-    def initialize(self, url="local", data_dir=None, functions=None, user_params="synapsify_data"):
+    def init_model_experiment(self, url="local", data_dir=None, data_file_root=None, model="lstm", spark_params=default_params,**kwargs):
         ''' Create the connection to the cluster (e.g. AWS) and prepare to execute
         :return:
         '''
@@ -43,33 +45,67 @@ class INSpark():
         if data_dir==None: # Assume IdeaNet testing directory
             print "Using IdeaNet testing files"
             data_dir = opj(this_path,"../data")
-
-        ### USE LSTM MODEL IF NONE IS SPECIFIED---------------------------
-        if functions==None:
-            models = [opj(this_path,"../models/lstm/scode/lstm_class.py")]
-        else:
-            models = []
-            for f,func in enumerate(functions):
-                models.append(opj(this_path,func))
+        if data_file==None:
+            data_file = "Annotated_Comments_for_Naytev_Facebook.csv" # how do I handle multiple files vs multiple cuts of the same file?
 
         ### Setup the Spark configuration.
-        sc = SparkContext(conf = self._conf, pyFiles=models)
+        #  IdeaNets has a specific structure, where every model has it's own directory of the same name
+        #   as well as folder scode (i.e. Synapsify code)
+        if "colearn" not in model:
+            model_path = opj(this_path,"../models/"+model+"/scode"+model+"_class.py")
+        ast.literal_eval("import " + model_path + " as model_class")
+        sc = SparkContext(conf = self._conf, pyFiles=model_path)
 
         ### ORGANIZE THE PARAMETERS FOR EACH SPARK INSTANCE
-        spark_lstm = []
-        for param in user_params:
-            del LSTM
-            LSTM = lstm(param_file=param)
-            LSTM.preprocess()
-            spark_lstm.append(LSTM)
+        # It is assumed that the spark params will mimic the model params,
+        #   except each model variable will have 1 or N instances for each independent Spark instance
+        # First, determine how many individual Sparks instances:
+        #   we can be given a number or a key to the Spark params json:
 
-        self.dist_lstm = sc.parallelize(spark_lstm)
+        # Loop through kwargs and replace as the user requested
+        for key, value in kwargs.iteritems():
+            try:
+                spark_params[key] = value
+            except:
+                print "Could not add: " + str(key) + " --> " + str(value)
 
-        self.dist_lstm.spawn(slave_urls)
+        if isinstance( spark_params['Spark_instances'], int ):
+            num_experiments = spark_params['Spark_instances']
+        else: # Assume it's referencing another variable in the json input
+            key = spark_params['Spark_instances']
+            num_experiments = len(spark_params[key])
+
+        ### ORGANIZE MODEL EXPERIMENTS VIA SPARK PARAMETERS-------------------------------
+        spark_models = []
+        self._model = model.lower()
+        for e in xrange(num_experiments):
+            # if model.lower()=="lstm":
+
+            model_params = {}
+            for key, value in spark_params.iteritems():
+                if "spark" not in key.lower(): # Don't want to accidently pass park parameters to the model
+                    if len(value)>1:
+                        model_params[key] = value[e]
+                    else:
+                        model_params[key] = value
+
+                model_params['data_directory'] = data_dir
+                model_params['data_file'] =
+            model_obj = model_class(params=lstm_params)
+            spark_models.append(model_obj)
+            # else:
+            #     print "Your model needs to be supported."
+
+        self.dist_lstm = sc.parallelize(spark_models)
+
+        # self.dist_lstm.spawn(slave_urls)
 
     def run(self):
 
-        self.dist_lstm.map(lambda x: x.build_model().train_model().test_model())
+        if self._model=="lstm":
+            self.dist_lstm.map(lambda x: x.build_model().train_model().test_model())
+        else:
+            print "Your model is not supported."
 
     def reduce(self):
 

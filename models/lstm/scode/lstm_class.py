@@ -20,83 +20,76 @@ from load_params import Load_LSTM_Params
 
 class LSTM(Load_LSTM_Params):
 
-# params = {"dim_proj":128,
-#   "patience":10,
-#   "max_epochs":5000,
-#   "dispFreq":10,
-#   "decay_c":0.,
-#   "lrate":0.0001,
-#   "n_words":10000,
-#   "optimizer":"adadelta",
-#   "encoder":"lstm",
-#   "saveto":"lstm_model.npz",
-#   "validFreq":370,
-#   "saveFreq":1110,
-#   "maxlen":100,
-#   "batch_size":16,
-#   "valid_batch_size":64,
-#   "valid_portion":0.05,
-#   "dataset":"imdb",
-#   "noise_std":0.,
-#   "use_dropout":True,
-#   "reload_model":"",
-#   "text_col":0,
-#   "label_col":5,
-#   "train_max":0.5,
-#   "train_size":1524,
-#   "test_size":1533,
-#   "data_directory":"../data/test",
-#   "data_file":"Annotated_Comments_for_Always_Discreet_1.csv"}
+    def __init__(self, Object=None, params=None):
 
-    def __init__(self, Object=None, orig=None, params_dir=None, param_file=None): # Object = Params Data & Data Sets
-    # def __init__(self, Object=None, orig=None): # Object = Params Data & Data Sets
+        default_params = {
+            "dim_proj":128,
+            "patience":10,
+            "max_epochs":5000,
+            "dispFreq":10,
+            "decay_c":0.,
+            "lrate":0.0001,
+            "n_words":10000,
+            "optimizer":"adadelta",
+            "encoder":"lstm",
+            "saveto":"lstm_model.npz",
+            "validFreq":370,
+            "saveFreq":1110,
+            "maxlen":100,
+            "batch_size":16,
+            "valid_batch_size":64,
+            "valid_portion":0.05,
+            "dataset":"imdb",
+            "noise_std":0.,
+            "use_dropout":True,
+            "reload_model":"",
+            "text_col":0,
+            "label_col":5,
+            "train_max":0.5,
+            "train_size":1524,
+            "test_size":1533,
+            "data_directory":"../data/test",
+            "data_file":"Annotated_Comments_for_Always_Discreet_1.csv"
+        }
 
+        self._del_keys = ['_layers','f_grad_shared','f_grad'] #,'train_set']
+
+        if params!=None:
+            for key,value in params.iteritems():
+                try:
+                    default_params[key] = value
+                except:
+                    print "Could not add: " + str(key) +" --> "+ str(value)
+        self._params = default_params
+
+        ### THIS OBJECT THING NEEDS TO BE SIMPLIFIED NOW THAT EVERYTHING IS INHERITED.
         if Object==None:
-            if params_dir==None:
-                Load_LSTM_Params.__init__(self)
-            else:
-                Load_LSTM_Params.__init__(self, params_dir, param_file)
+            Load_LSTM_Params.__init__(self, self._params)
 
             self._layers = {'lstm': (self.param_init_lstm, self.lstm_layer)}
 
 
-        elif Object!=None: # Is it LSTM or Parameters Object?
+        elif Object!=None: # Copy the LSTM Object
 
             # Params & Data variables
-            self._params_dir  = copy.deepcopy(Object._params_dir)
-            self._params_file = copy.deepcopy(Object._params_file)
+            self._params  = copy.deepcopy(Object._params)
             self.train_set = copy.deepcopy(Object.train_set)
             self.valid_set = copy.deepcopy(Object.valid_set)
             self.test_set  = copy.deepcopy(Object.test_set)
             self._DICTIONARY = copy.deepcopy(Object._DICTIONARY)
 
-            if orig!=None:
-                try:
-                    print "Assuming object is LSTM, copying..."
-
-                    # LSTM variables
-                    self._layers = copy.deepcopy(Object._layers)
-                    self.model_options = copy.deepcopy(Object.model_options)
-                    self._params  = copy.deepcopy(Object._params)
-                    self._tparams = copy.deepcopy(Object._tparams) # I don't know if this will work, do Theano variables need to be recompiled?
-                    self.model_options = copy.deepcopy(Object.model_options)
-                    self.optimizer = self.model_options['optimizer']
-                    orig = 'Copied'
-                except:
-                    orig = "NotCopied"
-                    print "Couldn't copy LSTM Object, initializing a new object."
-
-            if orig=="NotCopied": # It's a Parameters object, not LSTM.
-
+            try:
+                print "Assuming object is LSTM, copying..."
                 # LSTM variables
-                self._layers = {'lstm': (self.param_init_lstm, self.lstm_layer)}
+                self._layers = copy.deepcopy(Object._layers)
                 self.model_options = copy.deepcopy(Object.model_options)
-                self._params  = self._init_params(self.model_options)
-                self._tparams = self._init_tparams(self._params)
+                self._params  = copy.deepcopy(Object._params)
+                self._tparams = copy.deepcopy(Object._tparams) # I don't know if this will work, do Theano variables need to be recompiled?
+                self.model_options = copy.deepcopy(Object.model_options)
                 self.optimizer = self.model_options['optimizer']
 
-            # Basic initialization assumes Object is Load_LSTM_Params class
-            if orig==None:
+            except:
+                print "Couldn't copy LSTM Object, initializing a new object."
                 self._layers = {'lstm': (self.param_init_lstm, self.lstm_layer)}
                 self.model_options = Object.model_options
                 self._params  = self._init_params(self.model_options)
@@ -104,7 +97,7 @@ class LSTM(Load_LSTM_Params):
                 self.optimizer = self.model_options['optimizer']
 
 
-    @classmethod
+    # @classmethod
     def _init_params(self, options):
         """
         Global (not LSTM) parameter. For the embeding and the classifier.
@@ -158,7 +151,7 @@ class LSTM(Load_LSTM_Params):
                              state_before * 0.5)
         return proj
 
-    @classmethod
+    # @classmethod
     def lstm_layer(self, tparams, state_below, options, prefix='lstm', mask=None):
 
         nsteps = state_below.shape[0]
@@ -208,12 +201,12 @@ class LSTM(Load_LSTM_Params):
                                     n_steps=nsteps)
         return rval[0]
 
-    @classmethod
+    # @classmethod
     def get_layer(self, name):
         fns = self._layers[name]
         return fns
 
-    @classmethod
+    # @classmethod
     def param_init_lstm(self, options, params, prefix='lstm'):
         """
         Init the LSTM parameter:
@@ -235,7 +228,7 @@ class LSTM(Load_LSTM_Params):
 
         return params
 
-    @classmethod
+    # @classmethod
     def adadelta(self, lr, tparams, grads, x, mask, y, cost):
 
         zipped_grads = [theano.shared(p.get_value() * self.numpy_floatX(0.),
@@ -269,7 +262,7 @@ class LSTM(Load_LSTM_Params):
 
         return f_grad_shared, f_update
 
-    @classmethod
+    # @classmethod
     def _build_model(self, tparams, options):
 
         trng = RandomStreams(1234)
@@ -306,7 +299,7 @@ class LSTM(Load_LSTM_Params):
 
         return use_noise, x, mask, y, f_pred_prob, f_pred, cost
 
-    @classmethod
+    # @classmethod
     def build_model(self):
 
         print 'Building model'
@@ -451,7 +444,7 @@ class LSTM(Load_LSTM_Params):
     #     preds = self.f_pred(x, mask)
     #     return preds
 
-    @classmethod
+    # @classmethod
     def classify(self, sentences):
         """This function uses f_pred to classify the user provided text.
         To accomplish this, the vector must be reorganized relative to the input DICTIONARY
@@ -472,7 +465,7 @@ class LSTM(Load_LSTM_Params):
 
         return preds
 
-    @classmethod
+    # @classmethod
     def pred_error(self, data, iterator, verbose=False):
         """
         Just compute the error
@@ -492,7 +485,7 @@ class LSTM(Load_LSTM_Params):
 
         return valid_err
 
-    @classmethod
+    # @classmethod
     def zipp(self, params):
         """
         When we reload the model. Needed for the GPU stuff.
@@ -500,7 +493,7 @@ class LSTM(Load_LSTM_Params):
         for kk, vv in params.iteritems():
             self._tparams[kk].set_value(vv)
 
-    @classmethod
+    # @classmethod
     def train_model(self, max_epochs=None):
 
         if max_epochs==None:
@@ -629,11 +622,11 @@ class LSTM(Load_LSTM_Params):
         self.test_err = test_err
         return self
 
-    @classmethod
+    # @classmethod
     def test_model(self):
         return self
 
-    @classmethod
+    # @classmethod
     def pickle_model(self, filename="./IdeaNet.pkl"):
         '''Save the IdeaNet for future use
             filename: string giving the path and name of the file to save the IdeaNet to
@@ -641,27 +634,55 @@ class LSTM(Load_LSTM_Params):
         id = str(uuid.uuid1())
         filename += '.' + id
         f = file(filename,'wb')
-        pkl.dump(self,f,protocol=pkl.HIGHEST_PROTOCOL)
+        state = self.__getstate__()
+        pkl.dump(state,f,protocol=pkl.HIGHEST_PROTOCOL)
         f.close()
 
-    @classmethod
+    # @classmethod
     def load_pickle(self,filename):
         f = file(filename,'rb')
-        IdeaNet = pkl.load(f)
+        state = pkl.load(f)
         f.close()
-        self.__init__(IdeaNet, orig='New')
+        self.__setstate__(state)
+        # self.__init__(IdeaNet, orig='New')
 
-    @classmethod
+    # @classmethod
     def zip_model(self, filename="./IdeaNet.zip"):
         id = str(uuid.uuid1())
         filename += '.' + id
         f = open(filename,'w')
         theano.misc.pkl_utils.dump(self,f)
 
-    @classmethod
+    # @classmethod
     def load_zip(self,filename):
         IdeaNet = np.load(filename)
         self.__init__(IdeaNet['self'],orig='New')
+
+    def __getstate__(self,save_training_data=False):
+
+        # Reduce model size by saving off the training data.
+        if save_training_data:
+            id = str(uuid.uuid1())
+            filename = "TrainingSet." + id + ".pickle"
+            f = file(filename,'wb')
+            pkl.dump(self.train_set,f,protocol=pkl.HIGHEST_PROTOCOL)
+            f.close()
+        # Return the state and delete the saved training data.
+        # ['f_pred', '_use_noise', '_text_col', 'f_cost', '_tparams', 'model_options', 'train_set', '_train_xx', '_layers', 'f_grad_shared', '_test_xx', 'optimizer', 'valid_set', '_data_file', 'f_pred_prob', '_test_size', '_train_size', 'f_update', '_params', 'test_set', 'f_grad', '_n_words', '_label_col', '_data_directory', '_DICTIONARY', '_model_options']
+        # Can't save class instances or shared variables due to recursion limits
+        state = dict(self.__dict__)
+        for key in self._del_keys:
+            del state[key]
+        return state
+
+    def __setstate__(self, d, train_set_file=None):
+
+        self.__dict__.update(d)
+
+        if train_set_file!=None:
+            f = file(train_set_file,'rb')
+            d.train_set = pkl.load(f)
+            f.close
 
 # if __name__ == '__main__':
 #     filename = sys.argv[0]

@@ -12,13 +12,15 @@ from synapsify_preprocess import Preprocess
 
 class Load_LSTM_Params(Preprocess):
 
-    def __init__(self, params_dir=params_directory, param_file='ruofan_params.json'):
-        self._params_dir = params_dir
-        self._param_file = param_file
-        self.model_options = self.JSON_minify(os.path.join(self._params_dir, self._param_file))
-        Preprocess.__init__(self, self.model_options)
+    def __init__(self, params=None):
+        if params==None:
+            print "Please provide input params"
+        else:
+            self._params = params
+            self.model_options = self._params
+            Preprocess.__init__(self, self.model_options)
 
-    @classmethod
+    # @classmethod
     def JSON_minify(self, filename): # assumes it's in this directory
 
         # f = open('../params/'+filename,'r')
@@ -47,7 +49,7 @@ class Load_LSTM_Params(Preprocess):
     #==============================================================================
     # imdb.py functions imdb.py functions imdb.py functions imdb.py functions
     #==============================================================================
-    @classmethod
+    # @classmethod
     def _get_dataset_file(self, dataset, default_dataset, origin):
         '''Look for it as if it was a full path, if not, try local file,
         if not try in the data directory.
@@ -73,7 +75,7 @@ class Load_LSTM_Params(Preprocess):
             urllib.urlretrieve(origin, dataset)
         return dataset
 
-    @classmethod
+    # @classmethod
     def _load_raw_data(self, path="imdb.pkl"):
         ''' I just want to know the file structure so I can train my own model!!'''
 
@@ -97,7 +99,7 @@ class Load_LSTM_Params(Preprocess):
     # From lstm.py From lstm.py From lstm.py From lstm.py From lstm.py From lstm.py
     #==============================================================================
 
-    @classmethod
+    # @classmethod
     def _load_params(self, path, params):
         pp = np.load(path)
         for kk, vv in params.iteritems():
@@ -111,7 +113,7 @@ class Load_LSTM_Params(Preprocess):
     # From lstm.py From lstm.py From lstm.py From lstm.py From lstm.py From lstm.py
     #==============================================================================
 
-    @classmethod
+    # @classmethod
     def update_options(self):
 
         # Assemble directories
