@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 This file is designed to ingest Synapsify standard tagged data sets and convert them to LSTM input format
 
@@ -24,7 +26,6 @@ if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 
 from Synapsify.loadCleanly import sheets as sh
-import sys		### Should be added if we use the package "sys"
 from subprocess import Popen, PIPE	### Popen and PIPE should be added as we use its functions
 
 # tokenizer.perl is from Moses: https://github.com/moses-smt/mosesdecoder/tree/master/scripts/tokenizer
@@ -33,21 +34,29 @@ tokenizer_cmd = [tokenizer_dir_file, '-l', 'en', '-q', '-']
 
 class Preprocess():
 
-    def __init__(self, model_options, data_file=None, text_col=None, label_col=None, train_size=None, test_size=None):
-        self._data_directory  = os.path.realpath(os.path.abspath(os.path.join(this_dir,model_options['data_directory'])))
+    def __init__(self, model_options, **kwargs):
 
-        if data_file==None:  self._data_file  = model_options['data_file'];  else: self._data_file = data_file;
-        if text_col==None:   self._text_col   = model_options['text_col'];   else: self._text_col = text_col;
-        if label_col==None:  self._label_col  = model_options['label_col'];  else: self._label_col = label_col;
-        if train_size==None: self._train_size = model_options['train_size']; else: self._train_size = train_size;
-        if test_size==None:  self._test_size  = model_options['test_size'];  else: self._test_size = test_size;
+        # Loop through kwargs and replace as the user requested
+        for key, value in kwargs.iteritems():
+            try:
+                model_options[key] = value
+            except:
+                print "Could not add: " + str(key) + " --> " + str(value)
+
+        self._text_col   = model_options['text_col']
+        self._label_col  = model_options['label_col']
+        self._train_size = model_options['train_size']
+        self._test_size  = model_options['test_size']
+
+        self._data_directory = model_options['data_directory']
+        self._data_file = model_options['data_file']
 
         self._n_words    = model_options['n_words']
         self._model_options = model_options #JSON_minify(os.path.join(directory,filename))
         self._DICTIONARY = []
 
-    @staticmethod
-    def _tokenize(sentences):
+    # @staticmethod
+    def _tokenize(self,sentences):
 
         print 'Tokenizing..',
         text = "\n".join(sentences)
@@ -58,7 +67,7 @@ class Preprocess():
 
         return toks
 
-    @classmethod
+    # @classmethod
     def _build_dict(self, sentences):
 
         sentences = self._tokenize(sentences)
@@ -93,7 +102,7 @@ class Preprocess():
     #     seq = [self._DICTIONARY[w] if w in self._DICTIONARY else 1 for w in words]
     #     return seq
 
-    @classmethod
+    # @classmethod
     def _format_sentence_frequencies(self,sentences):
 
         sentences = self._tokenize(sentences)
@@ -106,7 +115,7 @@ class Preprocess():
 
         return seqs
 
-    @classmethod
+    # @classmethod
     def _get_sentiment_indices(self,rows, sentcol, init):
 
         # sx = np.where(np.in1d(sent_flags, row[sentcol]))[0]
@@ -116,7 +125,7 @@ class Preprocess():
         XX['neg'] = [r + len_init for r,row in enumerate(rows) if ((row[sentcol]=='Negative') | (row[sentcol]=='Mixed'))]
         return XX
 
-    @classmethod
+    # @classmethod
     def _munge_class_freqs(self,sentences,index_sets):
 
         # A variation on the original LSTM code,
@@ -131,7 +140,7 @@ class Preprocess():
 
         return (freqs_x, freqs_y)
 
-    @classmethod
+    # @classmethod
     def _get_rand_indices(self,len_set, num_indices, forbidden):
         """
         Function is designed to extract test or training set indices
@@ -161,7 +170,7 @@ class Preprocess():
         train_set = (new_train_set_x, new_train_set_y)
         del new_train_set_x, new_train_set_y
 
-    @classmethod
+    # @classmethod
     def _split_train_w_valid_set(self, train_set):
         '''From imdb.py'''
         valid_portion = self._model_options['valid_portion']
@@ -177,12 +186,12 @@ class Preprocess():
 
         return valid_set_x, valid_set_y, train_set_x, train_set_y
 
-    @classmethod
+    # @classmethod
     def _remove_unk(self,x):
         '''Set the value of word who is not in the dictionary to 1.'''
         return [[1 if w >= self._n_words else w for w in sen] for sen in x]
 
-    @classmethod
+    # @classmethod
     def preprocess(self):
 
         # For Synapsify Core output, the comments are in the first column
