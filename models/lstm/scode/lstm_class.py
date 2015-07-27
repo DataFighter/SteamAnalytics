@@ -450,27 +450,37 @@ class LSTM(Load_LSTM_Params):
         To accomplish this, the vector must be reorganized relative to the input DICTIONARY
         sentences is a list of strings
         """
+        import time
+
+        start = time.time()
 
         data = self._format_sentence_frequencies(sentences)
-        preds = []
+        # preds = []
         len_data = len(data)
-        iterator = self.get_minibatches_idx(len_data, self.model_options['batch_size'], shuffle=True)
-        for _, valid_index in iterator:
+        # iterator = self.get_minibatches_idx(len_data, self.model_options['batch_size'], shuffle=True)
+        # for _, valid_index in iterator:
+        # for vix in xrange(len_data):
             # this_pred = self._classify_one(data, valid_index)
-            x, mask, y = self._prepare_data([data[t] for t in valid_index],
-                                      np.array([1]*len_data),
-                                      maxlen=None)
-            this_pred = self.f_pred(x, mask)
-            preds.append(this_pred)
+            # x, mask, y = self._prepare_data([data[t] for t in valid_index], np.array([1]*len_data), maxlen=None)
+        x, mask, y = self._prepare_data(data, np.array([1]*len_data), maxlen=None)
+        preds = self.f_pred(x, mask)
+            # preds.append(this_pred.sum() / len(valid_index))
+            # preds.append(this_pred)
+
+        end = time.time()
+        print "Time to Tag: " + str(end - start)
 
         return preds
 
     # @classmethod
     def pred_error(self, data, iterator, verbose=False):
         """
-        Just compute the error
-        f_pred: Theano fct computing the prediction
-        _prepare_data: usual _prepare_data for that dataset.
+        Compute the error of the prediction and the truth of the training data.
+
+        :param data: The sentences and their class in a tuple
+        :type data: list of 1x2 tuples
+        :param_iterator: IDFK
+        :rtype:
         """
         valid_err = 0
         for _, valid_index in iterator:
@@ -498,6 +508,8 @@ class LSTM(Load_LSTM_Params):
 
         if max_epochs==None:
             max_epochs = self.model_options['max_epochs']
+        else:
+            self.model_options['max_epochs'] = max_epochs
 
         kf_valid = self.get_minibatches_idx( len(self.valid_set[0]), self.model_options['valid_batch_size'])
         kf_test  = self.get_minibatches_idx( len(self.test_set[0]) , self.model_options['valid_batch_size'])
@@ -632,6 +644,8 @@ class LSTM(Load_LSTM_Params):
             filename: string giving the path and name of the file to save the IdeaNet to
         '''
         id = str(uuid.uuid1())
+        if 'pkl' not in filename:
+            filename += '.pkl'
         filename += '.' + id
         f = file(filename,'wb')
         state = self.__getstate__()
