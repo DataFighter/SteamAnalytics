@@ -49,7 +49,8 @@ class LSTM(Load_LSTM_Params):
             "train_size":1524,
             "test_size":1533,
             "data_directory":"../data/test",
-            "data_file":"Annotated_Comments_for_Always_Discreet_1.csv"
+            "data_file":"Annotated_Comments_for_Always_Discreet_1.csv",
+            "raw_rows":None
         }
 
         self._del_keys = ['_layers','f_grad_shared','f_grad'] #,'train_set']
@@ -453,6 +454,9 @@ class LSTM(Load_LSTM_Params):
         import time
 
         start = time.time()
+
+        # empty sentences are an issue
+        # xx,sentences = [s,sent for s,sent in enumerate(dirty_sentences): if sent!='']
 
         data = self._format_sentence_frequencies(sentences)
         # preds = []

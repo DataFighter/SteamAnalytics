@@ -47,6 +47,7 @@ class Preprocess():
         self._label_col  = model_options['label_col']
         self._train_size = model_options['train_size']
         self._test_size  = model_options['test_size']
+        self._raw_rows   = model_options['raw_rows']
 
         self._data_directory = model_options['data_directory']
         self._data_file = model_options['data_file']
@@ -125,6 +126,18 @@ class Preprocess():
         XX['neg'] = [r + len_init for r,row in enumerate(rows) if ((row[sentcol]=='Negative') | (row[sentcol]=='Mixed'))]
         return XX
 
+    def _get_class_indices(self,rows, labelcol, init):
+
+        len_init = len(init) # Ruofan fix
+        # How many classes are there?
+        class_labels = np.array([row[labelcol] for row in rows])
+        classes = np.unique(class_labels)
+        XX = {}
+        for c in classes:
+            XX[str(c)] = np.where(class_labels==c) + len_init
+
+        return XX
+
     # @classmethod
     def _munge_class_freqs(self,sentences,index_sets):
 
@@ -196,7 +209,12 @@ class Preprocess():
 
         # For Synapsify Core output, the comments are in the first column
         #   and the sentiment is in the 6th column
-        header, rows = sh.get_spreadsheet_rows(os.path.join(self._data_directory, self._data_file) ,self._text_col)
+        if self._raw_rows==None:
+            header, rows = sh.get_spreadsheet_rows(os.path.join(self._data_directory, self._data_file) ,self._text_col)
+        else:
+            header = []
+            rows = self._raw_rows
+
         sentences = [str(S[self._text_col]) for s, S in enumerate(rows)]
         len_sentences = len(sentences)
         self._DICTIONARY = self._build_dict(sentences)
@@ -207,13 +225,28 @@ class Preprocess():
         # max_sentence_length(self.train_x_sets) #
         # max_sentence_length(self.test_x_sets) # IS THERE A MAXIMUM LENGTH???????
 
-        # Grab the indices for the Core sentiment
-        trXX = self._get_sentiment_indices([rows[r] for r in self._train_xx], self._label_col, [])
-        teXX = self._get_sentiment_indices([rows[r] for r in self._test_xx], self._label_col, self._train_xx)
+        if self._class_type=="Sentiment":
+            # Grab the indices for the Core sentiment
+            trXX = self._get_sentiment_indices([rows[r] for r in self._train_xx], self._label_col, [])
+            teXX = self._get_sentiment_indices([rows[r] for r in self._test_xx], self._label_col, self._train_xx)
 
-        # Munge training and test sets for the classes provided
-        train = self._munge_class_freqs(sentences,[trXX['neg'],trXX['pos']])
-        test  = self._munge_class_freqs(sentences,[teXX['neg'],teXX['pos']])
+            # Munge training and test sets for the classes provided
+            train = self._munge_class_freqs(sentences,[trXX['neg'],trXX['pos']])
+            test  = self._munge_class_freqs(sentences,[teXX['neg'],teXX['pos']])
+        else:
+            trXX = self._get_class_indices([rows[r] for r in self._train_xx], self._label_col, [])
+            teXX = self._get_class_indices([rows[r] for r in self._test_xx], self._label_col, self._train_xx)
+
+            # Munge training and test sets for the classes provided
+            train_classes = []
+            for trc in trXX:
+                train_classes.append(trc)
+            test_classes = []
+            for trc in teXX:
+                test_classes.append(trc)
+            train = self._munge_class_freqs(sentences,train_classes)
+            test  = self._munge_class_freqs(sentences,test_classes)
+
 
         # Split training into a validation set per the model parameter
         valid_set_x, valid_set_y, train_set_x, train_set_y = self._split_train_w_valid_set( train)
