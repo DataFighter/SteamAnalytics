@@ -1,7 +1,5 @@
 import os, sys, inspect, csv, math
 from StringIO import StringIO
-### from load_params import Load_LSTM_Params
-from lstm_class import LSTM as lstm
 
 ### Note: Please set-up the environment variables before running the code:
 ### AWS_SECRET_ACCESS_KEY=...
@@ -19,6 +17,17 @@ os.environ["PYTHONPATH"] = python_dir
 ### Setup pyspark directory path
 pyspark_dir = os.path.realpath(os.path.abspath(os.path.join(spark_home_dir, "./python")))
 sys.path.append(pyspark_dir)
+
+### Setup the scode directory
+scode_dir = os.path.realpath(os.path.abspath(os.path.join(curr_dir, "../models/lstm/scode")))
+sys.path.append(scode_dir)
+
+### Setup the Synapsify directory
+synapsify_dir = os.path.realpath(os.path.abspath(os.path.join(curr_dir, "../../Synapsify")))
+sys.path.append(synapsify_dir)
+
+### from load_params import Load_LSTM_Params
+from lstm_class import LSTM as lstm
 
 ### Import the pyspark
 from pyspark import SparkConf, SparkContext
@@ -65,13 +74,19 @@ def lstm_test(path, content):
 
 def main():
   ### Initialize the SparkConf and SparkContext
+
+  '''
   conf = SparkConf().setAppName("ruofan").setMaster("local")
   sc = SparkContext(conf = conf)
   datafile = sc.wholeTextFiles("s3n://synapsify-ruofan/Synapsify_data", use_unicode=False) ### Read data directory from S3 storage.
 
   ### Sent the application in each of the slave node
   temp = datafile.foreach(lambda (path, content): myfunc(path, content))
-
+  '''
+  run_lstm = lstm()
+  run_lstm.build_model()
+  run_lstm.train_model()
+  run_lstm.test_model()
 
 if __name__ == "__main__":
   main()

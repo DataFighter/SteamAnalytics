@@ -48,6 +48,7 @@ class Preprocess():
         self._train_size = model_options['train_size']
         self._test_size  = model_options['test_size']
         self._raw_rows   = model_options['raw_rows']
+        self._class_type = "Sentiment"
 
         self._data_directory = model_options['data_directory']
         self._data_file = model_options['data_file']
@@ -134,7 +135,7 @@ class Preprocess():
         classes = np.unique(class_labels)
         XX = {}
         for c in classes:
-            XX[str(c)] = np.where(class_labels==c) + len_init
+            XX[str(c)] = np.where(class_labels==c)[0] + len_init
 
         return XX
 
