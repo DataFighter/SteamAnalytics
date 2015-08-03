@@ -530,6 +530,7 @@ sub load_prefixes
     my ($language, $PREFIX_REF) = @_;
 
     my $prefixfile = "$mydir/nonbreaking_prefix.$language";
+    my $prefixfile = "nonbreaking_prefix.$language";
     print STDERR "Prefix File: '$prefixfile' \n";
 
     #default back to English if we don't have a language-specific prefix file

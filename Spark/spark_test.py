@@ -51,7 +51,6 @@ def myfunc(path, content):
     break
 
 def lstm_test(path, content):
-  ### Convert the string to the file object, and we need to import StringIO in the code.
   data = StringIO(content)
 
   ### Read data from S3.
@@ -62,11 +61,12 @@ def lstm_test(path, content):
   test_size = int(num_instances - train_size)
 
   ### Create an instance of lstm class
-  run_lstm = lstm()
-  run_lstm.params['data_file'] = data  ### Update the lstm
-  run_lstm.params['train_size'] = train_size
-  run_lstm.params['test_size'] = test_size
+  params = {}
+  params['raw_rows'] = content  ### Update the lstm
+  params['train_size'] = train_size
+  params['test_size'] = test_size
 
+  run_lstm = lstm(params=params)
   run_lstm.build_model()
   run_lstm.train_model()
   run_lstm.test_model()
@@ -75,18 +75,35 @@ def lstm_test(path, content):
 def main():
   ### Initialize the SparkConf and SparkContext
 
-  '''
+  ### Locations of Python files.
+  sheets_loc = '/home/ying/Deep_Learning/Synapsify/Synapsify/loadCleanly/sheets.py'
+  lstm_class_loc = '/home/ying/Deep_Learning/IdeaNets/IdeaNets/models/lstm/scode/lstm_class.py'
+  load_params_loc = '/home/ying/Deep_Learning/IdeaNets/IdeaNets/models/lstm/scode/load_params.py'
+  preprocess_loc = '/home/ying/Deep_Learning/IdeaNets/IdeaNets/models/lstm/scode/synapsify_preprocess.py'
+
+  ### Pass Python files to Spark.
+  pyFiles = []
+  pyFiles.append(sheets_loc)
+  pyFiles.append(lstm_class_loc)
+  pyFiles.append(load_params_loc)
+  pyFiles.append(preprocess_loc)
+
+
+  ### Initialize the spark configuration.
   conf = SparkConf().setAppName("ruofan").setMaster("local")
-  sc = SparkContext(conf = conf)
+  sc = SparkContext(conf = conf, pyFiles=pyFiles)
+
+  ### Add non-python files passing to Spark.
+  sc.addFile('/home/ying//AWS_Tutorial/spark-1.4.0/bin/en.zip')
+  sc.addFile('/home/ying/Deep_Learning/IdeaNets/IdeaNets/models/lstm/scode/tokenizer.perl')
+  sc.addFile('/home/ying/Deep_Learning/Synapsify/Synapsify/loadCleanly/stopwords.txt')
+  sc.addFile('/home/ying/Deep_Learning/Synapsify/Synapsify/loadCleanly/prepositions.txt')
+
+
   datafile = sc.wholeTextFiles("s3n://synapsify-ruofan/Synapsify_data", use_unicode=False) ### Read data directory from S3 storage.
 
   ### Sent the application in each of the slave node
-  temp = datafile.foreach(lambda (path, content): myfunc(path, content))
-  '''
-  run_lstm = lstm()
-  run_lstm.build_model()
-  run_lstm.train_model()
-  run_lstm.test_model()
+  datafile.foreach(lambda (path, content): lstm_test(path, content))
 
 if __name__ == "__main__":
   main()

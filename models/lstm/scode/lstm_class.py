@@ -48,7 +48,8 @@ class LSTM(Load_LSTM_Params):
             "train_max":0.5,
             "train_size":1524,
             "test_size":1533,
-            "data_directory":"../data/test",
+            #"data_directory":"../data/test",
+            "data_directory":"/home/ying/Deep_Learning/Synapsify_data",
             "data_file":"Annotated_Comments_for_Always_Discreet_1.csv",
             "raw_rows":None
         }
@@ -56,6 +57,7 @@ class LSTM(Load_LSTM_Params):
         self._del_keys = ['_layers','f_grad_shared','f_grad'] #,'train_set']
 
         if params!=None:
+            #print params
             for key,value in params.iteritems():
                 try:
                     default_params[key] = value
@@ -68,7 +70,6 @@ class LSTM(Load_LSTM_Params):
             Load_LSTM_Params.__init__(self, self._params)
 
             self._layers = {'lstm': (self.param_init_lstm, self.lstm_layer)}
-
 
         elif Object!=None: # Copy the LSTM Object
 
@@ -96,7 +97,6 @@ class LSTM(Load_LSTM_Params):
                 self._params  = self._init_params(self.model_options)
                 self._tparams = self._init_tparams(self._params)
                 self.optimizer = self.model_options['optimizer']
-
 
     # @classmethod
     def _init_params(self, options):
