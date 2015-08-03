@@ -21,11 +21,12 @@ import numpy as np
 
 # If IdeaNets are treated as a module, this addition should not be necessary.
 this_dir = os.path.split(inspect.getfile( inspect.currentframe() ))[0]
-cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(this_dir,"../../../../Synapsify")))
+cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(this_dir,"../../../../Synapsify/Synapsify/loadCleanly/"))) ### This is changed by Ruofan
 if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 
-from Synapsify.loadCleanly import sheets as sh
+#from Synapsify.loadCleanly import sheets as sh
+import sheets as sh ### Changed by Ruofan
 from subprocess import Popen, PIPE	### Popen and PIPE should be added as we use its functions
 
 # tokenizer.perl is from Moses: https://github.com/moses-smt/mosesdecoder/tree/master/scripts/tokenizer
@@ -213,8 +214,15 @@ class Preprocess():
         if self._raw_rows==None:
             header, rows = sh.get_spreadsheet_rows(os.path.join(self._data_directory, self._data_file) ,self._text_col)
         else:
+            '''
             header = []
             rows = self._raw_rows
+            '''
+            file_name = "temp.csv"
+            f = open("temp.csv", "w")
+            f.write(self._raw_rows)      # str() converts to string
+            f.close()
+            header, rows = sh.get_spreadsheet_rows(file_name,self._text_col)
 
         sentences = [str(S[self._text_col]) for s, S in enumerate(rows)]
         len_sentences = len(sentences)
@@ -225,6 +233,9 @@ class Preprocess():
         self._test_xx  = self._get_rand_indices(len_sentences, self._test_size,self._train_xx)
         # max_sentence_length(self.train_x_sets) #
         # max_sentence_length(self.test_x_sets) # IS THERE A MAXIMUM LENGTH???????
+
+        #print "train_xx Index Index Index Index Index Index Index Index Index Index: ",  self._train_xx
+        #print "test_xx Index Index Index Index Index Index Index Index Index Index: ",  self._test_xx
 
         if self._class_type=="Sentiment":
             # Grab the indices for the Core sentiment
