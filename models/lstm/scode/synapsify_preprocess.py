@@ -48,7 +48,7 @@ class Preprocess():
         self._train_size = model_options['train_size']
         self._test_size  = model_options['test_size']
         self._raw_rows   = model_options['raw_rows']
-        self._class_type = "Sentiment"
+        self._class_type = model_options['class_type']
 
         self._data_directory = model_options['data_directory']
         self._data_file = model_options['data_file']
@@ -241,10 +241,10 @@ class Preprocess():
             # Munge training and test sets for the classes provided
             train_classes = []
             for trc in trXX:
-                train_classes.append(trc)
+                train_classes.append(trXX[trc])
             test_classes = []
             for trc in teXX:
-                test_classes.append(trc)
+                test_classes.append(teXX[trc])
             train = self._munge_class_freqs(sentences,train_classes)
             test  = self._munge_class_freqs(sentences,test_classes)
 
