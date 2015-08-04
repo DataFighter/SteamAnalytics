@@ -50,6 +50,7 @@ class Preprocess():
         self._test_size  = model_options['test_size']
         self._raw_rows   = model_options['raw_rows']
         self._class_type = model_options['class_type']
+        self._dedupe     = model_options['dedupe']
 
         self._data_directory = model_options['data_directory']
         self._data_file = model_options['data_file']
@@ -212,7 +213,7 @@ class Preprocess():
         # For Synapsify Core output, the comments are in the first column
         #   and the sentiment is in the 6th column
         if self._raw_rows==None:
-            header, rows = sh.get_spreadsheet_rows(os.path.join(self._data_directory, self._data_file) ,self._text_col)
+            header, rows = sh.get_spreadsheet_rows(os.path.join(self._data_directory, self._data_file), self._text_col, dedupe=self._dedupe)
         else:
             '''
             header = []

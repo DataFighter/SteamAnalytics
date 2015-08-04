@@ -44,6 +44,7 @@ class LSTM(Load_LSTM_Params):
             "use_dropout":True,
             "reload_model":"",
             "text_col":0,
+            "dedupe":True,
             "label_col":5,
             "train_max":0.5,
             "train_size":1524,
